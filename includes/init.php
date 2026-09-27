@@ -54,10 +54,28 @@ if (!headers_sent()) {
 // readable message rather than a stack trace leaking onto the screen.
 // =====================================================================
 
+/**
+ * Throw away anything already written, so a failure can be reported cleanly.
+ *
+ * Output buffering is started at the bottom of this file. Without it, a page
+ * that fails after it has begun rendering has already committed the response:
+ * the status stays 200 and the visitor gets half a page with an error box
+ * wedged into the middle of it. Discarding the buffer first means a failure
+ * always arrives as a whole, correctly status-coded page.
+ */
+function discard_output(): void
+{
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+}
+
 /** A page explaining that the database is unreachable. */
 function render_database_unavailable(Throwable $exception): void
 {
     $detail = APP_DEBUG ? $exception->getMessage() : '';
+
+    discard_output();
 
     render_error_page(
         503,
@@ -77,6 +95,8 @@ set_exception_handler(function (Throwable $exception): void {
     error_log('[hagmah] ' . $exception->getMessage() . ' @ '
         . $exception->getFile() . ':' . $exception->getLine());
 
+    discard_output();
+
     render_error_page(
         500,
         'Something went wrong',
@@ -85,6 +105,60 @@ set_exception_handler(function (Throwable $exception): void {
         'Try again',
         'javascript:location.reload()'
     );
+});
+
+// =====================================================================
+// Buffering
+//
+// Started last, so that everything above (configuration, headers, handlers)
+// runs before there is any buffer to discard. The buffer is flushed by PHP at
+// the end of a successful request; discard_output() throws it away on failure.
+// =====================================================================
+
+ob_start();
+
+/**
+ * Catch the failures that never become an exception.
+ *
+ * Running out of memory, or a fatal error raised while a handler was already
+ * running, bypasses set_exception_handler() entirely. PHP reports those here
+ * at shutdown, which is the last chance to say something useful.
+ */
+register_shutdown_function(function (): void {
+    $problem = error_get_last();
+
+    if ($problem === null
+        || !in_array($problem['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        return;
+    }
+
+    // A page that finished normally leaves no buffer, so an error logged
+    // earlier in the request is history rather than a failed response.
+    if (ob_get_level() === 0) {
+        return;
+    }
+
+    error_log('[hagmah] fatal: ' . $problem['message'] . ' @ '
+        . $problem['file'] . ':' . $problem['line']);
+
+    discard_output();
+
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: text/html; charset=utf-8');
+    }
+
+    echo '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+        . '<meta name="robots" content="noindex">'
+        . '<title>Something went wrong &middot; ' . e(APP_NAME) . '</title>'
+        . '<link rel="stylesheet" href="' . e(url('assets/css/style.css')) . '"></head>'
+        . '<body class="page page--centred"><main class="errorpage">'
+        . '<p class="errorpage__code">500 <span>Something went wrong</span></p>'
+        . '<h1 class="errorpage__title">The request could not be completed</h1>'
+        . '<p class="errorpage__message">The problem has been written to the PHP error log.</p>'
+        . '<div class="errorpage__actions">'
+        . '<a class="btn btn--primary" href="javascript:location.reload()">Try again</a>'
+        . '</div></main></body></html>';
 });
 
 // =====================================================================

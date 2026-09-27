@@ -6,6 +6,10 @@
 # ---------------------------------------------------------------------------
 /config/database.php
 
+# Create this file to switch on detailed error messages locally. It is never
+# committed, so debugging cannot be left on by accident in a public checkout.
+/config/debug.local.php
+
 # Local environment overrides
 .env
 .env.*

@@ -29,9 +29,25 @@ date_default_timezone_set('Indian/Maldives');
 
 // ---------------------------------------------------------------------
 // Development vs production error reporting.
-// Set to false before putting this on a public server.
+//
+// Off unless it is explicitly switched on, so a fresh checkout on a public
+// server cannot leak exception messages by accident.
+//
+// To turn it on locally, create an empty file:
+//
+//     config/debug.local.php
+//
+// That file is listed in .gitignore, so switching debugging on never ends up
+// in a commit. An environment variable works too, which is handy on a server:
+//
+//     setx APP_DEBUG 1            (PowerShell, then restart Apache)
+//     $env:APP_DEBUG = '1'        (current shell only)
 // ---------------------------------------------------------------------
-define('APP_DEBUG', true);
+$debugSetting = strtolower((string) (getenv('APP_DEBUG') ?: ''));
+$debugEnabled = in_array($debugSetting, ['1', 'true', 'yes', 'on'], true)
+    || is_file(APP_ROOT . '/config/debug.local.php');
+
+define('APP_DEBUG', $debugEnabled);
 
 if (APP_DEBUG) {
     error_reporting(E_ALL);
