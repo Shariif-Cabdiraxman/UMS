@@ -104,7 +104,7 @@ render_page_head([
         : '',
 ]);
 
-render_readonly_notice('section');
+render_readonly_notice('faculties.manage', 'faculty');
 
 render_list_toolbar([
     'action'     => $path,

@@ -78,38 +78,7 @@ render_page_head([
     'actions'  => record_actions($path, $canManage ? 'faculties/form.php?id=' . $id : ''),
 ]);
 
-render_readonly_notice('faculty', 'faculty');
-
-/**
- * A short link-list of records, used for the child tables on detail pages.
- *
- * @param array<int,array{label:string,meta:string,href:string,trail?:string}> $items
- */
-function render_related_list(array $items, string $emptyMessage, string $iconName = 'document'): void
-{
-    if ($items === []) {
-        render_empty_state($iconName, 'Nothing linked yet', $emptyMessage);
-
-        return;
-    }
-    ?>
-    <ul class="relatedlist">
-        <?php foreach ($items as $item): ?>
-            <li class="relatedlist__item">
-                <a class="relatedlist__link" href="<?= e($item['href']) ?>">
-                    <span class="relatedlist__label"><?= e($item['label']) ?></span>
-                    <?php if (!empty($item['meta'])): ?>
-                        <span class="relatedlist__meta"><?= e($item['meta']) ?></span>
-                    <?php endif; ?>
-                </a>
-                <?php if (!empty($item['trail'])): ?>
-                    <span class="relatedlist__trail"><?= $item['trail'] ?></span>
-                <?php endif; ?>
-            </li>
-        <?php endforeach; ?>
-    </ul>
-    <?php
-}
+render_readonly_notice('faculties.manage', 'faculty');
 
 $departmentItems = [];
 foreach ($departments as $department) {

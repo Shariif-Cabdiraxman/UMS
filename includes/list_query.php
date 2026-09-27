@@ -732,6 +732,43 @@ function render_deflist(array $rows, bool $single = false): void
 }
 
 /**
+ * A short link-list of the records hanging off the one being viewed.
+ *
+ * Detail pages are mostly this: the child records of a faculty, a department,
+ * a course. Rendering them from data keeps the markup identical everywhere and
+ * keeps each view down to the queries and the labels.
+ *
+ * @param array<int,array{label:string,meta?:string,href:string,trail?:string}> $items
+ * @param string $emptyMessage Said when there is nothing linked yet.
+ * @param string $iconName     Icon for the empty state.
+ */
+function render_related_list(array $items, string $emptyMessage, string $iconName = 'document'): void
+{
+    if ($items === []) {
+        render_empty_state($iconName, 'Nothing linked yet', $emptyMessage);
+
+        return;
+    }
+    ?>
+    <ul class="relatedlist">
+        <?php foreach ($items as $item): ?>
+            <li class="relatedlist__item">
+                <a class="relatedlist__link" href="<?= e($item['href']) ?>">
+                    <span class="relatedlist__label"><?= e($item['label']) ?></span>
+                    <?php if (!empty($item['meta'])): ?>
+                        <span class="relatedlist__meta"><?= e($item['meta']) ?></span>
+                    <?php endif; ?>
+                </a>
+                <?php if (!empty($item['trail'])): ?>
+                    <span class="relatedlist__trail"><?= $item['trail'] ?></span>
+                <?php endif; ?>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+    <?php
+}
+
+/**
  * A filter dropdown for the list toolbar.
  *
  * The label is visually hidden but present, so a screen reader announces
