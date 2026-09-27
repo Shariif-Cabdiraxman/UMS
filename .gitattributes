@@ -1,0 +1,26 @@
+# Keep line endings consistent so diffs stay readable and the same file does
+# not show as fully changed just because someone edited it on Windows.
+
+* text=auto eol=lf
+
+# Scripts and styles that browsers load directly.
+*.php   text eol=lf diff=php
+*.css   text eol=lf
+*.js    text eol=lf
+*.json  text eol=lf
+*.sql   text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+*.ps1   text eol=crlf
+.gitignore  text eol=lf
+.gitattributes text eol=lf
+
+# Never touched by a text diff.
+*.svg  text eol=lf
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.woff binary
+*.woff2 binary
