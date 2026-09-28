@@ -223,12 +223,23 @@ function old(string $key, $default = '')
  *
  * Validation runs inline, and on failure the person is sent back to the form
  * they were filling in with their input intact rather than onto a blank page.
+ *
+ * Secrets are stripped centrally rather than by each form, because the values
+ * travel through the session and are written back into the HTML. A password
+ * that failed validation would otherwise be rendered back into the markup,
+ * where it would sit in the page source and in the browser's form history.
  */
 function redirect_back_with_errors(string $path, array $errors, array $old, string $anchor = ''): void
 {
     $_SESSION['_errors'] = $errors;
     $_SESSION['_old']    = $old;
     unset($_SESSION['_old']['csrf_token'], $_SESSION['_old']['id']);
+
+    foreach (array_keys($_SESSION['_old']) as $key) {
+        if (strpos(strtolower($key), 'password') !== false || strpos(strtolower($key), 'confirm') !== false) {
+            unset($_SESSION['_old'][$key]);
+        }
+    }
 
     redirect($path . ($anchor !== '' ? '#' . $anchor : ''));
 }
@@ -366,6 +377,9 @@ const STATUS_TONES = [
     'published' => 'ok',
     'draft'     => 'warn',
     'archived'  => 'neutral',
+    // users
+    'admin'     => 'accent',
+    'registrar' => 'info',
     // neutral entries
     'male'   => 'neutral',
     'female' => 'neutral',
@@ -418,6 +432,20 @@ function grade_badge(?string $letter): string
 
     return '<span class="badge badge--' . $tone . '"><span class="badge__mark" aria-hidden="true"></span>'
         . e($letter) . '</span>';
+}
+
+/** User roles as badges, because "Admin" and "Registrar" are more than statuses. */
+function role_badge(?string $role): string
+{
+    if ($role === 'admin') {
+        return badge('admin', 'Administrator');
+    }
+
+    if ($role === 'registrar') {
+        return badge('registrar', 'Registrar');
+    }
+
+    return badge($role);
 }
 
 // =====================================================================

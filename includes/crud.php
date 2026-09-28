@@ -45,7 +45,8 @@ function delete_record(string $table, int $id, string $noun, string $backTo, arr
             flash_set(
                 'error',
                 'This ' . strtolower($noun) . ' cannot be deleted because ' . $dependents . ' '
-                . strtolower($childNoun) . ($dependents === 1 ? '' : 's') . ' still refer to it'
+                . strtolower($childNoun) . ($dependents === 1 ? '' : 's')
+                . ($dependents === 1 ? ' still refers to it' : ' still refer to it')
                 . ($detailLabel !== '' ? ' (' . $detailLabel . ')' : '') . '. '
                 . 'Reassign or remove ' . ($dependents === 1 ? 'it' : 'them') . ' first.'
             );

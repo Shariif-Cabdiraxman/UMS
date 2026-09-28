@@ -76,6 +76,14 @@ function current_page_number(): int
  */
 function sort_state(array $allowed, string $fallback): array
 {
+    // The fallback has to be a key in the whitelist, not one of its values. If
+    // it is not, the first key is used, because an unknown key here would
+    // otherwise build an ORDER BY with an empty column name and take the whole
+    // page down with it.
+    if (!isset($allowed[$fallback])) {
+        $fallback = (string) array_key_first($allowed);
+    }
+
     $column = query_string('sort');
     $dir    = strtoupper(query_string('dir', 'asc'));
 
@@ -226,7 +234,8 @@ function render_list_footer(array $page, string $path, array $opts = []): void
                     <input type="hidden" name="<?= e((string) $k) ?>" value="<?= e((string) $v) ?>">
                 <?php endforeach; ?>
                 <label for="per_page">Rows</label>
-                <select id="per_page" name="per_page" onchange="this.form.submit()">
+                <?php // Submitted by assets/js/app.js; an inline onchange is dropped by the CSP. ?>
+                <select id="per_page" name="per_page" data-auto-submit>
                     <?= options($sizes, $page['per_page']) ?>
                 </select>
                 <noscript><button class="btn btn--default btn--sm" type="submit">Apply</button></noscript>
@@ -457,7 +466,7 @@ function textarea_field(string $name, string $label, array $options = []): strin
 /**
  * Faculty list as name => id, for filter dropdowns and selects.
  *
- * @return array<string,int>
+ * @return array<int,string>
  */
 function faculty_options(bool $withAll = false): array
 {
@@ -467,7 +476,7 @@ function faculty_options(bool $withAll = false): array
     return $withAll ? ['' => 'All faculties'] + $list : $list;
 }
 
-/** @return array<string,int> */
+/** @return array<int,string> */
 function department_options($facultyId = null, bool $withAll = false): array
 {
     if ($facultyId) {
@@ -485,8 +494,16 @@ function department_options($facultyId = null, bool $withAll = false): array
     return $withAll ? ['' => 'All departments'] + $list : $list;
 }
 
-/** @return array<string,int> */
-function lecturer_options($departmentId = null, bool $withAll = false): array
+/**
+ * Lecturer list as "First Last" => id, for dean, head and course pickers.
+ *
+ * The $anyLabel is a parameter because the blank option is a different thing
+ * depending on where the list is being used: a dean, a department head, and a
+ * course lecturer are three different vacancies.
+ *
+ * @return array<int,string>
+ */
+function lecturer_options($departmentId = null, bool $withAll = false, string $anyLabel = 'No dean assigned'): array
 {
     if ($departmentId) {
         $rows = db_all(
@@ -507,13 +524,13 @@ function lecturer_options($departmentId = null, bool $withAll = false): array
 
     $list = array_column($rows, 'name', 'id');
 
-    return $withAll ? ['' => 'No dean assigned'] + $list : $list;
+    return $withAll ? ['' => $anyLabel] + $list : $list;
 }
 
 /**
  * Course list as "CODE — Name" => id, for enrollment and grade selects.
  *
- * @return array<string,int>
+ * @return array<int,string>
  */
 function course_options($departmentId = null, $semester = null, bool $withAll = false): array
 {
@@ -547,7 +564,7 @@ function course_options($departmentId = null, $semester = null, bool $withAll = 
     return $withAll ? ['' => 'Select a course'] + $list : $list;
 }
 
-/** @return array<string,int> */
+/** @return array<int,string> */
 function student_options($departmentId = null, bool $withAll = false): array
 {
     if ($departmentId) {
@@ -641,7 +658,7 @@ function assessment_options(bool $withAll = false): array
  * two rows apart at a glance, because the same student appears once per
  * course they take.
  *
- * @return array<string,int>
+ * @return array<int,string>
  */
 function enrollment_options(
     $studentId = null,
@@ -781,11 +798,17 @@ function filter_select(string $name, string $label, array $optionsList, $current
 {
     $id = 'filter-' . $name;
 
+    // The "any" choice is rendered as the placeholder below, so a blank key
+    // arriving from an option builder would otherwise appear twice in the
+    // same dropdown.
+    unset($optionsList['']);
+
     return '<span class="filterfield">'
         . '<label class="sr-only" for="' . e($id) . '">' . e($label) . '</label>'
-        . '<select id="' . e($id) . '" name="' . e($name) . '">'
-        . '<option value="">' . e($anyLabel) . '</option>'
-        . options($optionsList, $current)
+        // data-auto-submit is handled by assets/js/app.js. An inline onchange
+        // would be silently dropped by the Content-Security-Policy.
+        . '<select id="' . e($id) . '" name="' . e($name) . '" data-auto-submit>'
+        . options($optionsList, $current, $anyLabel)
         . '</select></span>';
 }
 

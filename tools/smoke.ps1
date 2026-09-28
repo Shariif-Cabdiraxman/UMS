@@ -102,7 +102,13 @@ function Post-Form {
 function Diagnostics {
     param([string]$Html)
     if (-not $Html) { return "NO OUTPUT" }
-    $hits = $Html -split "`n" | Select-String -Pattern 'Fatal error|Warning:|Notice:|Deprecated:|Uncaught|Parse error|Stack trace'
+    # PHP renders a diagnostic as <b>Warning</b>: ... in ... on line 12. The
+    # closing tag before the colon is what separates a real diagnostic from body
+    # copy that merely contains the word: the sample data includes an
+    # announcement titled "Notice: upgrade of the student records system", and a
+    # plain 'Notice:' pattern reported that healthy page as broken.
+    $pattern = '<b>(Fatal error|Warning|Notice|Deprecated|Parse error)</b>:|Uncaught|Stack trace|on line \d+'
+    $hits = $Html -split "`n" | Select-String -Pattern $pattern
     if ($hits) { return (($hits | ForEach-Object { ($_.Line -replace '\s+', ' ').Trim() }) -join ' || ') }
     return $null
 }

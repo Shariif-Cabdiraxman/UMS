@@ -28,7 +28,7 @@ if (is_post()) {
             1451 => [
                 'Department',
                 'SELECT COUNT(*) FROM `departments` WHERE `faculty_id` = ?',
-                'departments belong to it',
+                'they still belong to it',
             ],
         ]);
     }

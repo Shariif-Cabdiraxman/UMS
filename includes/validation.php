@@ -140,6 +140,13 @@ function apply_rule(string $name, ?string $argument, $value, string $label, stri
         case 'numeric':
             return is_numeric($value) ? null : $label . ' must be a number.';
 
+        case 'string':
+            // Guards the fields bound straight to a text column. A field posted
+            // as an array, title[]=x, arrives here as an array, and without this
+            // rule it would be cast to an integer further down rather than
+            // rejected.
+            return is_string($value) ? null : $label . ' must be text.';
+
         case 'email':
             return filter_var($value, FILTER_VALIDATE_EMAIL) === false
                 ? 'Enter a valid email address.'

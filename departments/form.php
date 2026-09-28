@@ -88,10 +88,20 @@ if (is_post()) {
     $facultyId = (int) $data['faculty_id'];
     $headId    = ($data['head_id'] ?? '') === '' ? null : (int) $data['head_id'];
 
-    // A head of department must belong to the department they are appointed
-    // to, otherwise the two screens would tell visitors different stories.
+    // A head of department must work inside the faculty that owns this
+    // department, otherwise the two screens would tell visitors different
+    // stories. The lecturer is reached through their own department, so the
+    // faculty being compared is the one that employs them.
     if ($headId !== null) {
-        $headFaculty = db_value('SELECT `faculty_id` FROM `departurers` WHERE `id` = ?', 'i', [$headId]);
+        $headFaculty = db_value(
+            'SELECT d.`faculty_id`
+               FROM `lecturers` l
+               JOIN `departments` d ON d.`id` = l.`department_id`
+              WHERE l.`id` = ?
+              LIMIT 1',
+            'i',
+            [$headId]
+        );
 
         if ($headFaculty === null || (int) $headFaculty !== $facultyId) {
             $record = array_merge($record, $data);
@@ -142,6 +152,9 @@ if (!$canManage) {
 
 $faculties = faculty_options(false);
 $facultyId = (int) $record['faculty_id'] > 0 ? (int) $record['faculty_id'] : null;
+// lecturer_options() takes a department id, not a faculty id. On create there is
+// no department yet, so the head picker offers the full staff list.
+$departmentId = $id > 0 ? $id : null;
 
 layout_start($isEdit ? 'Edit department' : 'Add department', 'departments');
 
@@ -187,10 +200,10 @@ $cancelTo = $isEdit ? 'departments/view.php?id=' . $id : $path;
                 'hint'     => 'The faculty this department belongs to.',
             ]) ?>
 
-            <?= select_field('head_id', 'Head of department', lecturer_options($facultyId, true), [
+            <?= select_field('head_id', 'Head of department', lecturer_options($departmentId, true), [
                 'value' => (string) $record['head_id'],
                 'wide'  => true,
-                'hint'  => 'Optional. The list narrows to the chosen faculty.',
+                'hint'  => 'Optional. The list narrows to the staff of this department.',
             ]) ?>
 
             <?= textarea_field('description', 'Description', [

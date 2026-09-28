@@ -28,17 +28,17 @@ if (is_post()) {
             1451 => [
                 'Student',
                 'SELECT COUNT(*) FROM `students` WHERE `department_id` = ?',
-                'students are registered to it',
+                'they are still registered to it',
             ],
             1452 => [
                 'Course',
                 'SELECT COUNT(*) FROM `courses` WHERE `department_id` = ?',
-                'courses belong to it',
+                'they still belong to it',
             ],
             1453 => [
                 'Lecturer',
                 'SELECT COUNT(*) FROM `lecturers` WHERE `department_id` = ?',
-                'lecturers are attached to it',
+                'they are still attached to it',
             ],
         ]);
     }

@@ -114,7 +114,7 @@ foreach ($students as $student) {
     $studentItems[] = [
         'label' => full_name($student['first_name'], $student['last_name']),
         'meta'  => $student['student_no'] . ' · ' . $student['enrollment_year'],
-        'href'  => url('students/view.php?id=' . (int) $student['id']),
+        'href'  => url('students/view.php?id=' . urlencode((string) $student['student_no'])),
         'trail' => badge($student['status']),
     ];
 }
