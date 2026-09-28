@@ -1,12 +1,13 @@
-# Smoke tests for the lecturer/course/student/enrollment/grade/announcement/user
-# modules built after the faculty/department pair. Exercises each list page,
-# one create-plus-delete round trip per module, and the handful of validation
-# paths unique to these modules.
+# Smoke tests for all nine modules: faculties, departments, lecturers, courses,
+# students, enrollments, grades, announcements and users. Exercises each list
+# page, one create-plus-delete round trip per module, and the handful of
+# validation paths unique to these modules.
 #
-# Dot-sources smoke.ps1 for the HTTP + DB harness.
+# Dot-sources smoke.ps1 for the HTTP + DB harness. Resolved relative to this
+# file so the suite runs from any checkout.
 
 $ErrorActionPreference = 'Stop'
-. "C:\xampp\htdocs\university-management-system\tools\smoke.ps1"
+. (Join-Path $PSScriptRoot 'smoke.ps1')
 
 $pass = 0
 $fail = 0

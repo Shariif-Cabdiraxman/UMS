@@ -10,19 +10,49 @@
 #
 # Usage, from any test script:
 #
-#     . "C:\xampp\htdocs\university-management-system\tools\smoke.ps1"
+#     . (Join-Path $PSScriptRoot 'tools\smoke.ps1')
 #     Login 'admin' 'Admin@123'
 #     $r = Post-Form '/faculties/form.php' @{ code='fct-abc'; name='Faculty of Example' }
 #     $r.Status
 #     Diagnostics $r.Html
 #
+# Two settings are read from the environment so the suite is not tied to one
+# machine. Both have defaults that suit a stock XAMPP install:
+#
+#     $env:UMS_BASE_URL  = 'http://localhost/university-management-system'
+#     $env:UMS_MYSQL     = 'C:\xampp\mysql\bin\mysql.exe'
+#     $env:UMS_DB_USER   = 'root'
+#     $env:UMS_DB_PASS   = ''
+#
 # Note: Page returns the HTML string only. Use Http-Get when the status code
 # matters, because the .Status property is not there to read.
 
-$Global:Base = "http://localhost/university-management-system"
+$Global:Base = if ($env:UMS_BASE_URL) { $env:UMS_BASE_URL } else { "http://localhost/university-management-system" }
 $Global:Jar  = Join-Path $env:TEMP "hagmah-cookies.txt"
 
 # --- plumbing ---------------------------------------------------------------
+
+function Find-Mysql {
+    # An explicit path wins, then the usual XAMPP homes, then whatever is on
+    # PATH. Resolved once and cached, since Db is called per assertion.
+    if ($Global:MysqlExe) { return $Global:MysqlExe }
+
+    $candidates = @($env:UMS_MYSQL, "C:\xampp\mysql\bin\mysql.exe", "C:\Program Files\XAMPP\mysql\bin\mysql.exe")
+    foreach ($c in $candidates) {
+        if ($c -and (Test-Path -LiteralPath $c)) {
+            $Global:MysqlExe = $c
+            return $c
+        }
+    }
+
+    $onPath = Get-Command mysql.exe -ErrorAction SilentlyContinue
+    if ($onPath) {
+        $Global:MysqlExe = $onPath.Source
+        return $Global:MysqlExe
+    }
+
+    throw "mysql.exe not found. Set `$env:UMS_MYSQL to its full path."
+}
 
 function Reset-Session {
     param([string]$Jar = $Global:Jar)
@@ -140,9 +170,11 @@ function Table-Row-Count {
 
 function Db {
     param([string]$Query)
-    $mysql = "C:\xampp\mysql\bin\mysql.exe"
-    if (-not (Test-Path $mysql)) { throw "mysql.exe not found" }
-    return (& $mysql -u root -N -e $Query)
+    $mysql = Find-Mysql
+    $args = @("-u", $(if ($env:UMS_DB_USER) { $env:UMS_DB_USER } else { "root" }))
+    if ($env:UMS_DB_PASS) { $args += "-p$($env:UMS_DB_PASS)" }
+    $args += @("-N", "-e", $Query)
+    return (& $mysql @args)
 }
 
 function Db-Count {
