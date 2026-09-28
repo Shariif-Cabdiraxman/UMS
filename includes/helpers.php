@@ -43,6 +43,33 @@ function ejs($value): string
 // URLs and redirects
 // =====================================================================
 
+/**
+ * The path of the page currently being requested, with its query string.
+ *
+ * Only ever built from SCRIPT_NAME and QUERY_STRING, both of which the server
+ * supplies, so it is safe to put in an href. Used by retry controls that have
+ * to reload the screen that failed.
+ */
+function current_url_path(): string
+{
+    $path = $_SERVER['SCRIPT_NAME'] ?? '/';
+    $query = $_SERVER['QUERY_STRING'] ?? '';
+
+    return $query === '' ? $path : $path . '?' . $query;
+}
+
+/**
+ * The path of the page currently being requested, without its query string.
+ *
+ * The counterpart to current_url_path() for the case where the query has to be
+ * rebuilt rather than repeated — a shell switch, for instance, which has to
+ * change one parameter and keep the rest of the list state.
+ */
+function current_script_path(): string
+{
+    return $_SERVER['SCRIPT_NAME'] ?? '/';
+}
+
 /** Build an absolute URL for a path inside the application. */
 function url(string $path = ''): string
 {
@@ -94,6 +121,27 @@ function selected($a, $b): string
 function checked(bool $condition): string
 {
     return $condition ? ' checked' : '';
+}
+
+/**
+ * The seeded accounts the sign-in screen may advertise.
+ *
+ * Empty unless the deployment is in demonstration mode, so a real install
+ * never shows a working password on the sign-in page. The passwords mirror
+ * the ones in database.sql; changing them there means changing them here.
+ *
+ * @return array<int,array{role:string,username:string,password:string}>
+ */
+function demo_accounts(): array
+{
+    if (!defined('APP_DEMO_MODE') || !APP_DEMO_MODE) {
+        return [];
+    }
+
+    return [
+        ['role' => 'Administrator', 'username' => 'admin', 'password' => 'Admin@123'],
+        ['role' => 'Registrar', 'username' => 'registrar', 'password' => 'Registrar@123'],
+    ];
 }
 
 // =====================================================================
@@ -417,7 +465,13 @@ function badge(?string $status, ?string $overrideLabel = null): string
         . e($label) . '</span>';
 }
 
-/** Grade badges are coloured by band, which is the one place colour is load-bearing. */
+/**
+ * Grade badges.
+ *
+ * Bands are distinguished by the letter itself and by the badge mark, not by
+ * colour: the palette is monochrome, so a grade must still be readable when
+ * the surrounding tones are identical.
+ */
 function grade_badge(?string $letter): string
 {
     $letter = ($letter ?? '') !== '' ? $letter : '—';

@@ -22,6 +22,11 @@
 
     // -----------------------------------------------------------------
     // Navigation drawer (small screens)
+    //
+    // Below 900px the rail is translated off-canvas but stays in the
+    // document. Without `inert` a keyboard user tabs straight into a menu
+    // they cannot see, so the closed drawer is taken out of the tab order
+    // and the focus is kept inside it while it is open.
     // -----------------------------------------------------------------
 
     function initSidebar() {
@@ -29,29 +34,81 @@
         var scrim = doc.querySelector('.scrim');
         if (!sidebar) { return; }
 
+        var FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+        var drawer = window.matchMedia('(max-width: 900px)');
+        var openers = doc.querySelectorAll('[data-sidebar-open]');
         var lastFocused = null;
+
+        function isOpen() {
+            return sidebar.classList.contains('is-open');
+        }
+
+        function setInert(value) {
+            if (!drawer.matches) { return; }
+            if (value) {
+                sidebar.removeAttribute('inert');
+                sidebar.removeAttribute('aria-hidden');
+            } else {
+                sidebar.setAttribute('inert', '');
+                sidebar.setAttribute('aria-hidden', 'true');
+            }
+        }
+
+        function syncOpeners(value) {
+            Array.prototype.forEach.call(openers, function (button) {
+                button.setAttribute('aria-expanded', value ? 'true' : 'false');
+            });
+        }
 
         function open() {
             lastFocused = doc.activeElement;
             sidebar.classList.add('is-open');
+            setInert(false);
+            syncOpeners(true);
             if (scrim) { scrim.hidden = false; }
             doc.body.style.overflow = 'hidden';
+
             var closeBtn = sidebar.querySelector('.sidebar__close');
             if (closeBtn) { closeBtn.focus(); }
         }
 
-        function close() {
+        function close(restoreFocus) {
+            if (!isOpen()) { return; }
             sidebar.classList.remove('is-open');
+            setInert(true);
+            syncOpeners(false);
             if (scrim) { scrim.hidden = true; }
             doc.body.style.overflow = '';
-            if (lastFocused && lastFocused.focus) { lastFocused.focus(); }
+            if (restoreFocus !== false && lastFocused && lastFocused.focus) { lastFocused.focus(); }
+        }
+
+        // Leaving the narrow breakpoint reveals the rail, so drop the state.
+        function handleBreakpoint(event) {
+            if (event.matches) {
+                setInert(true);
+                syncOpeners(false);
+                if (scrim) { scrim.hidden = true; }
+                doc.body.style.overflow = '';
+                sidebar.classList.remove('is-open');
+            } else {
+                setInert(false);
+                sidebar.removeAttribute('aria-hidden');
+                if (scrim) { scrim.hidden = true; }
+                doc.body.style.overflow = '';
+            }
+        }
+
+        if (typeof drawer.addEventListener === 'function') {
+            drawer.addEventListener('change', handleBreakpoint);
+        } else if (typeof drawer.addListener === 'function') {
+            drawer.addListener(handleBreakpoint);
         }
 
         doc.addEventListener('click', function (event) {
             var opener = event.target.closest('[data-sidebar-open]');
             if (opener) {
                 event.preventDefault();
-                open();
+                isOpen() ? close() : open();
                 return;
             }
             if (event.target.closest('[data-sidebar-close]')) {
@@ -61,17 +118,84 @@
         });
 
         doc.addEventListener('keydown', function (event) {
-            if (event.key === 'Escape' && sidebar.classList.contains('is-open')) {
+            if (!isOpen()) { return; }
+
+            if (event.key === 'Escape') {
                 close();
+                return;
+            }
+
+            // Trap Tab inside the open drawer.
+            if (event.key === 'Tab') {
+                var items = Array.prototype.filter.call(
+                    sidebar.querySelectorAll(FOCUSABLE),
+                    function (node) { return node.offsetParent !== null; }
+                );
+                if (items.length === 0) { return; }
+
+                var first = items[0];
+                var last = items[items.length - 1];
+
+                if (event.shiftKey && doc.activeElement === first) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && doc.activeElement === last) {
+                    event.preventDefault();
+                    first.focus();
+                }
             }
         });
 
         // Following a link inside the drawer should close it as well.
         sidebar.addEventListener('click', function (event) {
-            if (event.target.closest('.nav__link') && sidebar.classList.contains('is-open')) {
-                close();
+            if (event.target.closest('.nav__link') && isOpen()) {
+                close(false);
             }
         });
+
+        handleBreakpoint(drawer);
+    }
+
+    // -----------------------------------------------------------------
+    // Error page recovery
+    //
+    // The error page is served under the same strict policy as the rest of
+    // the application, which blocks inline script and therefore
+    // "javascript:" URLs. The primary recovery control is a real button
+    // here so it still works with scripting disabled, and the history hop
+    // is what the button upgrades to.
+    // -----------------------------------------------------------------
+
+    function initErrorActions() {
+        var fallback = doc.querySelector('[data-error-home]');
+        var home = fallback ? fallback.getAttribute('data-error-home') : null;
+
+        Array.prototype.forEach.call(
+            doc.querySelectorAll('[data-action="history-back"]'),
+            function (button) {
+                button.addEventListener('click', function () {
+                    // A landing page reached directly has no history to
+                    // return to, so fall back to a known-good screen.
+                    if (window.history.length > 1) {
+                        window.history.back();
+                    } else if (home) {
+                        window.location.assign(home);
+                    }
+                });
+            }
+        );
+
+        // Retrying a failed request re-submits the current URL by reloading
+        // it. A cached response is not a concern here because the whole page
+        // is a failure notice.
+        Array.prototype.forEach.call(
+            doc.querySelectorAll('[data-action="reload"]'),
+            function (button) {
+                button.addEventListener('click', function () {
+                    window.location.reload();
+                });
+            }
+        );
     }
 
     // -----------------------------------------------------------------
@@ -216,6 +340,43 @@
     // Forms
     // -----------------------------------------------------------------
 
+    // -----------------------------------------------------------------
+    // Tables on small screens
+    //
+    // A wide data table is the one thing that cannot simply reflow. Below
+    // 700px each row becomes a stacked block and the column headings are
+    // carried on the cells as labels, so no data is hidden and nothing has
+    // to be scrolled sideways. The label is a data attribute on the cell,
+    // which the stylesheet reveals only in this mode.
+    // -----------------------------------------------------------------
+
+    function initTableLabels() {
+        // Tables that already declare per-cell labels are left alone.
+        var tables = doc.querySelectorAll('.tablewrap table:not([data-stacked])');
+
+        Array.prototype.forEach.call(tables, function (table) {
+            var headers = [];
+            var headCells = table.querySelectorAll('thead th');
+
+            Array.prototype.forEach.call(headCells, function (th) {
+                headers.push((th.textContent || '').trim());
+            });
+
+            var rows = table.querySelectorAll('tbody tr');
+
+            Array.prototype.forEach.call(rows, function (row) {
+                var cells = row.querySelectorAll('td');
+
+                Array.prototype.forEach.call(cells, function (cell, index) {
+                    if (!headers[index] || cell.getAttribute('data-label')) { return; }
+                    cell.setAttribute('data-label', headers[index]);
+                });
+            });
+
+            table.setAttribute('data-stacked', 'ready');
+        });
+    }
+
     function initValidation() {
         // Stop a double submit creating the record twice.
         doc.addEventListener('submit', function (event) {
@@ -242,25 +403,6 @@
         }, true);
     }
 
-    // -----------------------------------------------------------------
-    // Table checkbox selection
-    // -----------------------------------------------------------------
-
-    function initSelectAll() {
-        doc.addEventListener('change', function (event) {
-            var master = event.target;
-            if (!master.matches || !master.matches('[data-select-all]')) { return; }
-
-            var scope = doc.querySelector(master.getAttribute('data-select-all'));
-            if (!scope) { return; }
-
-            Array.prototype.forEach.call(
-                scope.querySelectorAll('input[type="checkbox"][name]'),
-                function (box) { box.checked = master.checked; }
-            );
-        });
-    }
-
     onReady(function () {
         initSidebar();
         initTheme();
@@ -270,6 +412,7 @@
         initUserMenu();
         initAutoSubmit();
         initValidation();
-        initSelectAll();
+        initErrorActions();
+        initTableLabels();
     });
 })();

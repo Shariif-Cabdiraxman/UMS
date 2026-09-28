@@ -27,6 +27,13 @@ require_once __DIR__ . '/validation.php';
  */
 function delete_record(string $table, int $id, string $noun, string $backTo, array $blocked = []): void
 {
+    // Internal guard: every delete must go through a POST with a valid CSRF.
+    // Individual callers enforce this, but defence in depth is prudent here.
+    if (!is_post()) {
+        not_found('Deletes must be submitted by POST. Use the list page to delete a record.');
+    }
+    verify_csrf();
+
     $table = safe_identifier($table);
 
     $exists = db_value('SELECT `id` FROM `' . $table . '` WHERE `id` = ?', 'i', [$id]);

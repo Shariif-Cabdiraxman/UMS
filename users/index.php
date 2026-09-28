@@ -98,7 +98,7 @@ $types  = '';
 
 if ($search !== '') {
     $where[] = '(u.`full_name` LIKE ? OR u.`username` LIKE ? OR u.`email` LIKE ?)';
-    $like    = '%' . $search . '%';
+    $like    = like_param($search);
     array_push($params, $like, $like, $like);
     $types .= 'sss';
 }

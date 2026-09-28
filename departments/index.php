@@ -67,7 +67,7 @@ $types  = '';
 if ($search !== '') {
     $where[] = '(d.`name` LIKE ? OR d.`code` LIKE ? OR d.`description` LIKE ?'
         . ' OR CONCAT(h.`first_name`, \' \', h.`last_name`) LIKE ?)';
-    $like = '%' . $search . '%';
+    $like = like_param($search);
     array_push($params, $like, $like, $like, $like);
     $types .= 'ssss';
 }

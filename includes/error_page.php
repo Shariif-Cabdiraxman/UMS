@@ -16,22 +16,24 @@ require_once __DIR__ . '/icons.php';
 /**
  * Render an error page and stop.
  *
+ * The document is built by hand because the failure may have happened before
+ * (or instead of) the admin shell, so nothing here may depend on session state
+ * or a database connection.
+ *
  * @param string $title   Short heading, sentence case.
- * @param string $message One or two sentences explaining what to do next.
+ * @param string $message One or two sentences explaining what to do next. Plain
+ *                        text; it is escaped here.
  * @param string $action  Label for the recovery button.
- * @param string $href    Where the button goes. May be a 'javascript:' URL.
+ * @param string $href    Where the button goes. Pass '' for the default
+ *                        "return to the previous screen" control, which is a
+ *                        real button so it still works without scripting.
  */
-function render_error_page(int $code, string $title, string $message, string $action = 'Go back', string $href = 'javascript:history.back()'): void
+function render_error_page(int $code, string $title, string $message, string $action = 'Go back', string $href = ''): void
 {
     if (!headers_sent()) {
-        http_response_code($code);
-    }
-
-    // 419 is not a real HTTP status; PHP would reject it, so map it to 400
-    // on the wire and keep 419 in the page heading.
-    $wireStatus = $code === 419 ? 400 : $code;
-    if (!headers_sent()) {
-        http_response_code($wireStatus);
+        // 419 is not a real HTTP status; PHP would reject it, so map it to 400
+        // on the wire and keep 419 in the page heading.
+        http_response_code($code === 419 ? 400 : $code);
     }
 
     $hints = [
@@ -42,18 +44,34 @@ function render_error_page(int $code, string $title, string $message, string $ac
     ];
 
     $hint = $hints[$code] ?? 'Error';
+
+    // Where the history hop lands when there is no history to go back to.
+    $home = url('dashboard.php');
+
+    // 'reload' is a keyword rather than a URL: it asks for a retry control.
+    // The control is a real link so recovery still works without scripting.
+    $reload = $href === 'reload';
+    if ($reload) {
+        $href = '';
+    } elseif ($href !== '') {
+        // A relative href would resolve against the directory of the page
+        // that failed, so every caller passes a resolved URL via url().
+        $href = preg_match('#^(?:https?:)?//#i', $href) === 1 ? $href : url($href);
+    }
     ?>
     <!doctype html>
     <html lang="en" data-theme="light">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="color-scheme" content="light dark">
         <meta name="robots" content="noindex">
         <title><?= e($code) ?> <?= e($title) ?> · <?= e(APP_NAME) ?></title>
         <link rel="icon" href="<?= e(url('assets/img/favicon.svg')) ?>" type="image/svg+xml">
         <link rel="stylesheet" href="<?= e(url('assets/css/style.css')) ?>">
+        <script src="<?= e(url('assets/js/theme.js')) ?>"></script>
     </head>
-    <body class="page page--centred">
+    <body class="page page--centred" data-error-home="<?= e($home) ?>">
         <main class="errorpage">
             <div class="errorpage__mark" aria-hidden="true">
                 <svg viewBox="0 0 48 48" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.25">
@@ -62,14 +80,25 @@ function render_error_page(int $code, string $title, string $message, string $ac
                     <circle cx="24" cy="32" r="1.1" fill="currentColor" stroke="none"/>
                 </svg>
             </div>
-            <p class="errorpage__code"><?= e($code) ?> <span><?= e($hint) ?></span></p>
+            <p class="errorpage__code"><?= e((string) $code) ?> <span><?= e($hint) ?></span></p>
             <h1 class="errorpage__title"><?= e($title) ?></h1>
-            <p class="errorpage__message"><?= $message ?></p>
+            <p class="errorpage__message"><?= e($message) ?></p>
             <div class="errorpage__actions">
-                <a class="btn btn--primary" href="<?= e($href) ?>"><?= e($action) ?></a>
+                <?php if ($reload): ?>
+                    <a class="btn btn--primary" href="<?= e(current_url_path()) ?>">
+                        <?= icon('refresh', 15) ?><span><?= e($action) ?></span>
+                    </a>
+                <?php elseif ($href === ''): ?>
+                    <a class="btn btn--primary" href="<?= e($home) ?>" data-action="history-back">
+                        <?= icon('arrow-left', 15) ?><span><?= e($action) ?></span>
+                    </a>
+                <?php else: ?>
+                    <a class="btn btn--primary" href="<?= e($href) ?>"><?= e($action) ?></a>
+                <?php endif; ?>
                 <a class="btn btn--quiet" href="<?= e(url('auth/login.php')) ?>">Sign in</a>
             </div>
         </main>
+        <script src="<?= e(url('assets/js/app.js')) ?>" defer></script>
     </body>
     </html>
     <?php

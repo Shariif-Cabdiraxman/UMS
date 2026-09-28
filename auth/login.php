@@ -51,10 +51,12 @@ if (is_post()) {
 
 $flashes = flash_take();
 
-render_standalone_head('', ['bodyClass' => 'authpage']);
+render_standalone_head('');
 
-$username = 'admin';
-$password = 'Admin@123';
+// Demonstration credentials are shown only when the deployment says this is a
+// demonstration. On a real installation the panel is never rendered, so the
+// seeded passwords are not advertised to anyone who loads the sign-in page.
+$demoAccounts = demo_accounts();
 ?>
 <div class="auth">
 
@@ -165,22 +167,26 @@ $password = 'Admin@123';
                 </button>
             </form>
 
-            <div class="auth__demo">
-                <p class="auth__demotitle">Demonstration accounts</p>
-                <dl class="auth__demos">
-                    <div>
-                        <dt>Administrator</dt>
-                        <dd><code><?= e($username) ?></code> / <code><?= e($password) ?></code></dd>
-                    </div>
-                    <div>
-                        <dt>Registrar</dt>
-                        <dd><code>registrar</code> / <code>Registrar@123</code></dd>
-                    </div>
-                </dl>
-                <p class="auth__demonote">
-                    This is a portfolio project. Change these credentials before any real use.
-                </p>
-            </div>
+            <?php if ($demoAccounts !== []): ?>
+                <div class="auth__demo">
+                    <p class="auth__demotitle">Demonstration accounts</p>
+                    <dl class="auth__demos">
+                        <?php foreach ($demoAccounts as $demo): ?>
+                            <div>
+                                <dt><?= e($demo['role']) ?></dt>
+                                <dd><code><?= e($demo['username']) ?></code> / <code><?= e($demo['password']) ?></code></dd>
+                            </div>
+                        <?php endforeach; ?>
+                    </dl>
+                    <p class="auth__demonote">
+                        This installation is running in demonstration mode. To stop
+                        the sign-in page advertising these accounts, create an empty
+                        file <code>config/demo.off.local.php</code> or set
+                        <code>APP_DEMO_MODE=0</code>, and change the passwords before
+                        any real use.
+                    </p>
+                </div>
+            <?php endif; ?>
         </div>
     </section>
 </div>

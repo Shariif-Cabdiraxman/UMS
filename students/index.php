@@ -64,7 +64,7 @@ $types  = '';
 if ($search !== '') {
     $where[] = '(s.`student_no` LIKE ? OR s.`first_name` LIKE ? OR s.`last_name` LIKE ?'
         . ' OR s.`email` LIKE ?)';
-    $like = '%' . $search . '%';
+    $like = like_param($search);
     array_push($params, $like, $like, $like, $like);
     $types .= 'ssss';
 }

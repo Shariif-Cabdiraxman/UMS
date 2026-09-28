@@ -1,0 +1,998 @@
+/* ==========================================================================
+   The phone shell
+
+   Loaded on top of style.css, and only for a request that includes/mobile.php
+   has given the phone shell. It inherits the tokens, the typography, the
+   buttons, the badges and the form controls rather than restating them, and it
+   rearranges the components around them for a thumb.
+
+   The rules for this file:
+
+     - One column. Nothing assumes a second one.
+     - Anything tappable is at least 44px on its shortest side.
+     - The bottom bar and the save bar clear the home indicator through
+       env(safe-area-inset-bottom).
+     - No colour of its own: a state is carried by its badge, its label and its
+       mark, and the palette stays the monochrome one from style.css.
+   ========================================================================== */
+
+:root {
+    --mbar-h: 52px;
+    --mtab-h: 56px;
+}
+
+body.mobile {
+    min-height: 100dvh;
+    background: var(--bg);
+    /* The bottom bar is fixed, so the content has to end above it or the last
+       row of a list is unreachable behind it. */
+    padding-bottom: calc(var(--mtab-h) + env(safe-area-inset-bottom) + 1.5rem);
+}
+
+/* --------------------------------------------------------------------------
+   App bar
+
+   A single sticky bar carrying the brand, where you are, and the theme
+   control. It is deliberately thin: on a phone the title is the only thing
+   worth keeping on screen, and the page heading repeats it underneath.
+   -------------------------------------------------------------------------- */
+
+.mbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: var(--mbar-h);
+    padding: 0.4rem 0.85rem;
+    padding-top: calc(0.4rem + env(safe-area-inset-top));
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+
+.mbar__mark {
+    flex: none;
+    display: inline-flex;
+    color: var(--text-2);
+}
+
+.mbar__titles {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.mbar__eyebrow {
+    margin: 0;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mbar__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    line-height: 1.2;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mbar__theme {
+    flex: none;
+}
+
+/* --------------------------------------------------------------------------
+   Content
+
+   The same region the desktop shell calls .content, so every page's own
+   spacing still applies; only the measure and the gutters change.
+   -------------------------------------------------------------------------- */
+
+.mcontent {
+    display: block;
+    width: 100%;
+    max-width: 34rem;
+    margin: 0 auto;
+    padding: 1rem 0.9rem 0;
+}
+
+/* --------------------------------------------------------------------------
+   Page heading
+
+   The desktop heading is a two column band: a title and a row of actions. On a
+   phone it becomes the first thing on the screen, with the actions beneath it
+   as full width targets, because an action tucked beside a title is the
+   smallest thing on the page.
+   -------------------------------------------------------------------------- */
+
+.pagehead {
+    display: block;
+    margin-bottom: 1.1rem;
+}
+
+.pagehead__eyebrow {
+    margin-bottom: 0.3rem;
+}
+
+.pagehead__title {
+    font-size: 1.4rem;
+    line-height: 1.25;
+}
+
+.pagehead__subtitle {
+    margin-top: 0.35rem;
+    font-size: 0.9rem;
+}
+
+.pagehead__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: 0.85rem;
+}
+
+.pagehead__actions .btn {
+    flex: 1 1 auto;
+    min-height: 44px;
+    justify-content: center;
+}
+
+/* --------------------------------------------------------------------------
+   Buttons and small controls
+
+   The desktop sizes are sized for a pointer. A phone needs the same control to
+   be a target, so the minimum is raised rather than restated everywhere.
+   -------------------------------------------------------------------------- */
+
+.btn,
+.iconbtn {
+    min-height: 44px;
+}
+
+.btn--sm {
+    min-height: 40px;
+}
+
+.iconbtn {
+    min-width: 44px;
+}
+
+/* --------------------------------------------------------------------------
+   Figures
+
+   Two up. One figure per row on a phone wastes the width that makes a number
+   scannable at a glance.
+   -------------------------------------------------------------------------- */
+
+.stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+}
+
+.stat {
+    padding: 0.8rem 0.85rem;
+}
+
+.stat__value {
+    font-size: 1.5rem;
+}
+
+.figuregrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* --------------------------------------------------------------------------
+   Panels and the two column splits
+
+   Everything the desktop shell puts side by side becomes a stack, in the order
+   it was written.
+   -------------------------------------------------------------------------- */
+
+.split,
+.split--wide,
+.grid-2,
+.grid-3 {
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
+}
+
+.panel {
+    border-radius: var(--radius);
+}
+
+.panel__head {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.panel__body {
+    padding: 0.7rem 0.85rem 0.85rem;
+}
+
+.panel__body--flush {
+    padding: 0;
+}
+
+/* The heading of a panel is the tap target for "see all" often enough, and a
+   44px target, that it earns the height. */
+.panel__action {
+    min-height: 40px;
+}
+
+/* --------------------------------------------------------------------------
+   Cards, definition lists and related records
+
+   A definition list is a two column grid on the desktop: a narrow term
+   against a wide description. Turned on its side it reads better as a label
+   above its value, which is what a thumb scrolling one at a time expects.
+   -------------------------------------------------------------------------- */
+
+.deflist > div,
+.mdef {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+    padding: 0.5rem 0;
+}
+
+.deflist__term {
+    font-size: 0.74rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--text-3);
+}
+
+.deflist__desc {
+    width: 100%;
+    font-size: 0.92rem;
+    text-align: left;
+    word-break: break-word;
+}
+
+.relatedlist__link {
+    min-height: 44px;
+    padding: 0.6rem 0.75rem;
+}
+
+.relatedlist__label,
+.relatedlist__meta {
+    display: block;
+}
+
+/* --------------------------------------------------------------------------
+   Record head
+
+   The mark, the name and the actions. Stacked, because beside a name there is
+   no room for an edit button.
+   -------------------------------------------------------------------------- */
+
+.recordhead {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.recordhead__title {
+    font-size: 1.3rem;
+}
+
+.recordhead__meta {
+    flex-wrap: wrap;
+}
+
+.recordhead__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.recordhead__actions .btn {
+    flex: 1 1 auto;
+    min-height: 44px;
+    justify-content: center;
+}
+
+/* --------------------------------------------------------------------------
+   Lists
+
+   The table is reflowed into labelled rows by style.css, which is the same
+   work on a phone as on a narrow desktop window. What is added here is the
+   spacing between those rows and a full width target on the actions.
+   -------------------------------------------------------------------------- */
+
+.tablewrap table[data-stacked='ready'] tr {
+    margin-bottom: 0.6rem;
+    padding: 0.15rem 0.2rem;
+}
+
+.tablewrap table[data-stacked='ready'] td {
+    padding: 0.4rem 0.7rem;
+}
+
+.tablewrap table[data-stacked='ready'] td[data-label]::before {
+    flex: 0 0 6.5rem;
+}
+
+.tablewrap table[data-stacked='ready'] td.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: flex-end;
+}
+
+.tablewrap table[data-stacked='ready'] td.actions .btn {
+    flex: 1 1 auto;
+    min-height: 40px;
+    justify-content: center;
+}
+
+.deletefrom {
+    display: inline-flex;
+}
+
+.cellstack {
+    text-align: left;
+}
+
+/* --------------------------------------------------------------------------
+   Search and filters
+
+   The toolbar is rebuilt for the phone: one search box at full width, and the
+   filters behind a fold that opens by itself when something is already set.
+   -------------------------------------------------------------------------- */
+
+.msearch {
+    margin-bottom: 0.9rem;
+}
+
+.msearch__row {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.msearch__icon {
+    position: absolute;
+    left: 0.75rem;
+    display: inline-flex;
+    color: var(--text-3);
+    pointer-events: none;
+}
+
+.msearch__input {
+    width: 100%;
+    min-height: 46px;
+    padding: 0.6rem 2.6rem;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    /* 16px keeps iOS Safari from zooming the page when the field is focused. */
+    font-size: 16px;
+}
+
+.msearch__input::-webkit-search-cancel-button {
+    display: none;
+}
+
+.msearch__clear {
+    position: absolute;
+    right: 0.4rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    color: var(--text-3);
+    border-radius: 50%;
+}
+
+.mfilters {
+    margin-top: 0.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.mfilters__summary {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 44px;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--text-2);
+    cursor: pointer;
+    list-style: none;
+}
+
+.mfilters__summary::-webkit-details-marker {
+    display: none;
+}
+
+.mfilters__summary::after {
+    content: '';
+    width: 0.4rem;
+    height: 0.4rem;
+    margin-left: auto;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg) translateY(-2px);
+    transition: transform 0.15s ease;
+}
+
+.mfilters[open] .mfilters__summary::after {
+    transform: rotate(-135deg) translateY(-2px);
+}
+
+.mfilters__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.2rem;
+    height: 1.2rem;
+    padding: 0 0.35rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--primary-fg);
+    background: var(--primary);
+    border-radius: 999px;
+}
+
+.mfilters__body {
+    display: grid;
+    gap: 0.6rem;
+    padding: 0.7rem 0.8rem 0.8rem;
+    border-top: 1px solid var(--border);
+}
+
+.mfilters__body .filterfield {
+    display: block;
+}
+
+.mfilters__body .filterfield > label {
+    position: static;
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.76rem;
+    color: var(--text-3);
+    clip: auto;
+    clip-path: none;
+    white-space: normal;
+    height: auto;
+    width: auto;
+}
+
+.mfilters__body .filterfield > select {
+    width: 100%;
+    min-height: 44px;
+}
+
+.mfilters__actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.mfilters__actions .btn {
+    flex: 1 1 auto;
+    min-height: 44px;
+    justify-content: center;
+}
+
+/* --------------------------------------------------------------------------
+   Pagination
+
+   Previous and next, full width and 44px tall. The numbers are the least
+   reliable thing to hit with a thumb, and on a list that scrolls they are also
+   the least necessary.
+   -------------------------------------------------------------------------- */
+
+.mpager {
+    display: grid;
+    gap: 0.7rem;
+    margin-top: 0.9rem;
+    padding: 0.8rem 0.85rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.mpager__status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-2);
+}
+
+.mpager__count {
+    font-weight: 400;
+    color: var(--text-3);
+}
+
+.mpager__controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.mpager__step {
+    display: inline-flex;
+    flex: 1 1 0;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 46px;
+    padding: 0 0.5rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+
+.mpager__step--next {
+    color: var(--primary-fg);
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.mpager__step.is-disabled {
+    color: var(--text-3);
+    background: transparent;
+    border-style: dashed;
+    opacity: 0.7;
+}
+
+/* --------------------------------------------------------------------------
+   Empty states and notices
+   -------------------------------------------------------------------------- */
+
+.empty {
+    padding: 2rem 1.1rem;
+    text-align: center;
+}
+
+.notice {
+    align-items: flex-start;
+}
+
+/* --------------------------------------------------------------------------
+   Forms
+
+   The grid becomes one column, the controls grow to a comfortable height, and
+   the save bar is pinned to the foot of the screen so a long form can be
+   submitted without scrolling back up to it.
+   -------------------------------------------------------------------------- */
+
+.formgrid,
+.formgrid--3 {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+}
+
+.field--wide {
+    grid-column: auto;
+}
+
+.field__label {
+    font-size: 0.82rem;
+}
+
+.field__control input,
+.field__control select,
+.field__control textarea {
+    /* 16px stops iOS Safari zooming in when a field takes focus. */
+    font-size: 16px;
+    min-height: 46px;
+}
+
+.field__control textarea {
+    min-height: 7rem;
+    line-height: 1.55;
+}
+
+.card__body {
+    padding: 0.9rem;
+}
+
+.formactions {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0 -0.9rem;
+    padding: 0.7rem 0.9rem calc(0.7rem + env(safe-area-inset-bottom));
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+}
+
+/* The card carries the form, so the bar's bleed has to match the card's own
+   padding rather than the page gutter. */
+.card .formactions {
+    margin: 0;
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+}
+
+.formactions .btn {
+    flex: 1 1 auto;
+    min-height: 46px;
+    justify-content: center;
+}
+
+.formactions__spacer {
+    display: none;
+}
+
+/* Dropped while the on-screen keyboard is up: assets/js/mobile.js measures
+   how much of the viewport it is covering. */
+.formactions.is-keyboarded {
+    display: none;
+}
+
+/* --------------------------------------------------------------------------
+   Flash messages
+
+   Under the app bar rather than floating over the content, and out of the way
+   of the bottom bar.
+   -------------------------------------------------------------------------- */
+
+.flashes {
+    position: static;
+    width: auto;
+    max-width: 34rem;
+    margin: 0 auto;
+    padding: 0.7rem 0.9rem 0;
+}
+
+.flash {
+    align-items: flex-start;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+.flash__close {
+    width: 32px;
+    height: 32px;
+}
+
+/* --------------------------------------------------------------------------
+   Bottom bar
+
+   The phone's navigation rail: fixed, within thumb reach, and only as tall as
+   four labels and their icons need.
+   -------------------------------------------------------------------------- */
+
+.mtabbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.mtab {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 0.1rem;
+    min-height: var(--mtab-h);
+    padding: 0.35rem 0.25rem;
+    /* Clears the home indicator on a device that has one. */
+    padding-bottom: calc(0.35rem + env(safe-area-inset-bottom));
+    color: var(--text-3);
+    border-top: 2px solid transparent;
+}
+
+.mtab.is-active {
+    color: var(--text);
+    border-top-color: var(--text);
+}
+
+.mtab__icon {
+    display: inline-flex;
+}
+
+.mtab__label {
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+/* --------------------------------------------------------------------------
+   The module index
+
+   The one screen the phone has that the desktop does not: a full page of
+   destinations, because four of them do not fit in a bottom bar and the rest
+   would otherwise be unreachable.
+   -------------------------------------------------------------------------- */
+
+.mhero {
+    margin-bottom: 1.2rem;
+    padding: 1rem 1rem 1.1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.mhero__title {
+    margin: 0 0 0.3rem;
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    line-height: 1.25;
+    font-weight: 600;
+}
+
+.mhero__text {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--text-2);
+    line-height: 1.6;
+}
+
+.mhero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+}
+
+.mquick {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 44px;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+
+.msection {
+    margin-top: 1.4rem;
+}
+
+.msection__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.6rem;
+}
+
+.msection__title {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+}
+
+.mgrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+}
+
+.mgriditem {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 58px;
+    padding: 0.7rem 0.8rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    color: inherit;
+}
+
+.mgriditem__icon {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    color: var(--text);
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+
+.mgriditem__label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.mgriditem__lock {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.55rem;
+    color: var(--text-3);
+}
+
+.mgriditem.is-locked .mgriditem__label {
+    color: var(--text-2);
+}
+
+.mnote {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-3);
+}
+
+.mnote svg {
+    flex: none;
+    margin-top: 0.15rem;
+}
+
+/* --------------------------------------------------------------------------
+   Out of the phone shell
+
+   Two links below everything else: the way back to the desktop view, and the
+   way out. Nothing in the application depends on either.
+   -------------------------------------------------------------------------- */
+
+.mfoot {
+    display: grid;
+    gap: 0.1rem;
+    max-width: 34rem;
+    margin: 1.6rem auto 0;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--border);
+}
+
+.mfoot__link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 46px;
+    padding: 0.4rem 0.2rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-2);
+}
+
+.mfoot__link--danger {
+    color: var(--danger-fg);
+}
+
+/* --------------------------------------------------------------------------
+   Wider phones
+
+   Past this width the single column stops being the best use of the screen, so
+   the figures, the module grid and the card grids take a column of their own.
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 560px) {
+    .mcontent,
+    .flashes,
+    .mfoot {
+        max-width: 44rem;
+    }
+
+    .stats,
+    .mgrid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Landscape
+
+   A landscape phone has height to spare and no width to spare, so the bar
+   moves to the short edge and the content keeps a comfortable measure.
+   -------------------------------------------------------------------------- */
+
+@media (orientation: landscape) and (max-height: 560px) {
+    body.mobile {
+        padding-bottom: 0.5rem;
+        padding-left: 4.5rem;
+    }
+
+    .mtabbar {
+        top: 0;
+        right: auto;
+        bottom: 0;
+        width: 4.5rem;
+        grid-template-columns: 1fr;
+        align-content: start;
+        border-top: 0;
+        border-right: 1px solid var(--border);
+    }
+
+    .mtab {
+        border-top: 0;
+        border-left: 2px solid transparent;
+    }
+
+    .mtab.is-active {
+        border-top-color: transparent;
+        border-left-color: var(--text);
+    }
+
+    .mcontent {
+        max-width: 42rem;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Motion, print and the wider window
+
+   Motion follows the system setting. Printing drops the phone furniture
+   entirely. And a phone shell inside a desktop window — which is what
+   ?view=mobile is for — keeps its own layout, because that is the whole point
+   of asking for it.
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .mfilters__summary::after {
+        transition: none;
+    }
+}
+
+@media print {
+    .mbar,
+    .mtabbar,
+    .mfoot,
+    .formactions,
+    .deletefrom,
+    .flashes,
+    .footer,
+    .sidebar,
+    .topbar {
+        display: none !important;
+    }
+
+    body.mobile {
+        padding-bottom: 0;
+    }
+
+    .mcontent {
+        max-width: none;
+        padding: 0;
+    }
+
+    .tablewrap table[data-stacked='ready'] tr,
+    .panel,
+    .card,
+    .stat {
+        border: 1px solid #c6c6c6;
+        box-shadow: none;
+        break-inside: avoid;
+    }
+}

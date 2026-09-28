@@ -50,7 +50,7 @@ $types  = '';
 
 if ($search !== '') {
     $where[] = '(a.`title` LIKE ? OR a.`content` LIKE ?)';
-    $like    = '%' . $search . '%';
+    $like    = like_param($search);
     array_push($params, $like, $like);
     $types .= 'ss';
 }

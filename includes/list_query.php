@@ -34,19 +34,35 @@ function query_int(string $key, int $default = 0): int
     return is_scalar($value) ? (int) $value : $default;
 }
 
-/** A multi-select filter such as faculty[]=1&faculty[]=2. */
-function query_int_array(string $key): array
+/**
+ * Escape the LIKE wildcards in a search term.
+ *
+ * The term is passed to the database as a bound parameter, so it cannot inject
+ * SQL. It can still be interpreted as a pattern, though: a search for "50%"
+ * or "a_b" matches far more than the visitor asked for. Escaping the
+ * metacharacters and declaring an explicit escape character makes the search
+ * mean a literal substring, which is what a search box is expected to do.
+ */
+function like_escape(string $value): string
 {
-    if (!isset($_GET[$key])) {
-        return [];
-    }
+    return str_replace(
+        ['\\', '%', '_'],
+        ['\\\\', '\\%', '\\_'],
+        $value
+    );
+}
 
-    if (!is_array($_GET[$key])) {
-        $single = is_scalar($_GET[$key]) ? [(int) $_GET[$key]] : [];
-        return array_values(array_unique($single));
-    }
-
-    return array_values(array_unique(array_map('intval', $_GET[$key])));
+/**
+ * A bound parameter for a substring search.
+ *
+ * Relies on the backslash being the escape character, which is MySQL's
+ * default for LIKE, so the SQL needs no `ESCAPE` clause. Declaring one is
+ * avoided deliberately: inside these single-quoted SQL strings it needs its
+ * own layer of backslash escaping, which is easy to get subtly wrong.
+ */
+function like_param(string $value): string
+{
+    return '%' . like_escape($value) . '%';
 }
 
 /** Read a per-page override, falling back to the configured default. */
@@ -71,7 +87,9 @@ function current_page_number(): int
  * Work out which column a list is sorted by.
  *
  * @param array<string,string> $allowed  Whitelist of URL name => SQL column.
- * @param string               $fallback Column used when nothing valid is asked for.
+ * @param string               $fallback Key in $allowed, used when nothing
+ *                                           valid is asked for. Must be a key
+ *                                           of the whitelist, not a column name.
  * @return array{column:string,dir:string,sql:string}
  */
 function sort_state(array $allowed, string $fallback): array
@@ -167,17 +185,28 @@ function render_page_head(array $options): void
 /**
  * The toolbar above a list: a search box plus whatever filters a module needs.
  *
+ * On a phone the filters collapse behind a disclosure and the search box goes
+ * full width, because a row of four dropdowns leaves no room for either. The
+ * two versions post the same fields to the same place, so a filtered list is
+ * the same list whichever shell drew it.
+ *
  * @param array{action:string,placeholder:string,filters?:string,extra?:string,hidden?:array} $options
  */
 function render_list_toolbar(array $options): void
 {
+    $filters = (string) ($options['filters'] ?? '');
+    $hidden  = (array) ($options['hidden'] ?? []);
+
+    if (wants_mobile()) {
+        render_mobile_list_toolbar($options, $filters, $hidden);
+
+        return;
+    }
     ?>
     <form class="toolbar" method="get" action="<?= e($options['action']) ?>" role="search">
-        <?php if (!empty($options['hidden'])): ?>
-            <?php foreach ($options['hidden'] as $name => $value): ?>
-                <input type="hidden" name="<?= e($name) ?>" value="<?= e((string) $value) ?>">
-            <?php endforeach; ?>
-        <?php endif; ?>
+        <?php foreach ($hidden as $name => $value): ?>
+            <input type="hidden" name="<?= e($name) ?>" value="<?= e((string) $value) ?>">
+        <?php endforeach; ?>
 
         <div class="toolbar__search">
             <?= icon('search', 16) ?>
@@ -190,8 +219,8 @@ function render_list_toolbar(array $options): void
                 autocomplete="off">
         </div>
 
-        <?php if (!empty($options['filters'])): ?>
-            <div class="toolbar__filters"><?= $options['filters'] ?></div>
+        <?php if ($filters !== ''): ?>
+            <div class="toolbar__filters"><?= $filters ?></div>
         <?php endif; ?>
 
         <div class="toolbar__actions">
@@ -199,7 +228,7 @@ function render_list_toolbar(array $options): void
                 <?= $options['extra'] ?>
             <?php endif; ?>
             <button class="btn btn--default" type="submit"><?= icon('search', 15) ?><span>Search</span></button>
-            <?php if (query_string('q') !== '' || count(array_diff(array_keys($_GET), ['page'])) > 0): ?>
+            <?php if (list_is_filtered()): ?>
                 <a class="btn btn--quiet" href="<?= e($options['action']) ?>">Reset</a>
             <?php endif; ?>
         </div>
@@ -208,12 +237,120 @@ function render_list_toolbar(array $options): void
 }
 
 /**
+ * Is this list narrowed by anything other than being on the first page?
+ *
+ * The `view` parameter is not a filter: it chooses the shell, and the shell
+ * then has to keep choosing itself, so it is ignored here and everywhere else
+ * that inspects the query string.
+ */
+function list_is_filtered(): bool
+{
+    $ignored = ['page', 'per_page', 'sort', 'dir', 'view'];
+
+    foreach ($_GET as $key => $value) {
+        if (in_array((string) $key, $ignored, true) || is_array($value) || trim((string) $value) === '') {
+            continue;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+/** The phone version of the list toolbar: search, then filters behind a fold. */
+function render_mobile_list_toolbar(array $options, string $filters, array $hidden): void
+{
+    $active = list_active_filters();
+    ?>
+    <form class="msearch" method="get" action="<?= e($options['action']) ?>" role="search">
+        <?php foreach ($hidden as $name => $value): ?>
+            <input type="hidden" name="<?= e($name) ?>" value="<?= e((string) $value) ?>">
+        <?php endforeach; ?>
+
+        <div class="msearch__row">
+            <span class="msearch__icon"><?= icon('search', 16) ?></span>
+            <label class="sr-only" for="mq"><?= e($options['placeholder']) ?></label>
+            <input class="msearch__input" type="search" id="mq" name="q"
+                   value="<?= e(query_string('q')) ?>"
+                   placeholder="<?= e($options['placeholder']) ?>"
+                   enterkeyhint="search" autocomplete="off">
+            <?php if (query_string('q') !== ''): ?>
+                <a class="msearch__clear" href="<?= e($options['action'] . with_query(['q' => null])) ?>"
+                   aria-label="Clear the search"><?= icon('x', 15) ?></a>
+            <?php endif; ?>
+        </div>
+
+        <?php if ($filters !== ''): ?>
+            <details class="mfilters"<?= $active > 0 ? ' open' : '' ?>>
+                <summary class="mfilters__summary">
+                    <?= icon('filter', 15) ?>
+                    <span>Filters</span>
+                    <?php if ($active > 0): ?>
+                        <span class="mfilters__count"><?= e((string) $active) ?></span>
+                    <?php endif; ?>
+                </summary>
+                <div class="mfilters__body">
+                    <?= $filters ?>
+                    <div class="mfilters__actions">
+                        <button class="btn btn--primary btn--sm" type="submit">Apply</button>
+                        <a class="btn btn--quiet btn--sm" href="<?= e($options['action']) ?>">Reset</a>
+                    </div>
+                </div>
+            </details>
+        <?php endif; ?>
+    </form>
+    <?php
+}
+
+/**
+ * How many of the current filters are actually narrowing the list.
+ *
+ * Counted from the fields a filter dropdown can post, rather than from
+ * everything in the query string, so the badge on the fold cannot claim a
+ * filter is on when the reader has only sorted the list.
+ */
+function list_active_filters(): int
+{
+    $count = 0;
+
+    foreach (list_filter_keys() as $key) {
+        if (isset($_GET[$key]) && trim((string) $_GET[$key]) !== '') {
+            $count++;
+        }
+    }
+
+    return $count;
+}
+
+/** The query keys a filter dropdown can post. */
+function list_filter_keys(): array
+{
+    return array_values(array_unique([
+        'q', 'faculty', 'department', 'status', 'year', 'role', 'course',
+        'letter', 'semester', 'assessment', 'year_from', 'year_to', 'marks_from',
+        'marks_to', 'student', 'lecturer', 'enrollment',
+    ]));
+}
+
+/**
  * The row count and pagination controls beneath a list.
+ *
+ * The phone version drops the page-size selector — a phone reader has no use
+ * for choosing twenty-five rows instead of ten — and replaces the numbered
+ * pager with previous and next, because the numbers themselves are the least
+ * reliable thing to hit with a thumb.
  *
  * @param array $page Output of paginate().
  */
 function render_list_footer(array $page, string $path, array $opts = []): void
 {
+    if (wants_mobile()) {
+        render_mobile_list_footer($page, $path, $opts);
+
+        return;
+    }
+
     $sizes = page_size_options();
     ?>
     <div class="listfoot">
@@ -258,13 +395,15 @@ function render_pager_links(array $page, string $path): string
     $pages   = $page['pages'];
     $html    = '';
 
-    $link = function (int $target, string $label, string $classes = '', bool $disabled = false) use ($path): string {
+    $link = function (int $target, string $label, string $classes = '', bool $disabled = false, bool $current = false) use ($path): string {
+        $classList = trim('pager__item ' . $classes);
         if ($disabled) {
             return '<span class="pager__item is-disabled">' . $label . '</span>';
         }
 
-        return '<a class="pager__item ' . $classes . '" href="'
-            . e($path . with_query(['page' => $target > 1 ? $target : null])) . '">' . $label . '</a>';
+        $aria = $current ? ' aria-current="page"' : '';
+        return '<a class="' . e($classList) . '" href="'
+            . e($path . with_query(['page' => $target > 1 ? $target : null])) . '"' . $aria . '>' . $label . '</a>';
     };
 
     $html .= $link($current - 1, icon('chevron-left', 14), 'pager__arrow', $current === 1);
@@ -289,6 +428,7 @@ function render_pager_links(array $page, string $path): string
             $number,
             (string) $number,
             $number === $current ? 'is-current' : '',
+            false,
             $number === $current
         );
         $previous = $number;
@@ -297,6 +437,64 @@ function render_pager_links(array $page, string $path): string
     $html .= $link($current + 1, icon('chevron-right', 14), 'pager__arrow', $current === $pages);
 
     return $html;
+}
+
+/**
+ * The phone's version of the list footer.
+ *
+ * A numbered pager at the foot of a scrolling list is one more thing to reach
+ * past, and the numbers themselves are the least reliable thing to hit with a
+ * thumb, so they go and previous and next stay. The links are built with
+ * with_query() like every other pager, which is what keeps the search term and
+ * the filters attached to the page being asked for.
+ */
+function render_mobile_list_footer(array $page, string $path, array $opts = []): void
+{
+    $noun = strtolower((string) ($opts['noun'] ?? 'record'));
+    $total = (int) $page['total'];
+    $pages = max(1, (int) $page['pages']);
+    $current = (int) $page['page'];
+    $step = function (int $target) use ($path): string {
+        return e($path . with_query(['page' => $target > 1 ? $target : null]));
+    };
+    ?>
+    <div class="mpager">
+        <p class="mpager__status">
+            <?php if ($total === 0): ?>
+                No <?= e($noun) ?>s
+            <?php else: ?>
+                Page <?= e((string) $current) ?> of <?= e((string) $pages) ?>
+                <span class="mpager__count">
+                    <?= e(format_number($total)) ?> <?= e($noun) ?><?= $total === 1 ? '' : 's' ?>
+                </span>
+            <?php endif; ?>
+        </p>
+
+        <?php if ($pages > 1): ?>
+            <div class="mpager__controls">
+                <?php if ($current > 1): ?>
+                    <a class="mpager__step" href="<?= $step($current - 1) ?>" rel="prev">
+                        <?= icon('chevron-left', 15) ?><span>Previous</span>
+                    </a>
+                <?php else: ?>
+                    <span class="mpager__step is-disabled" aria-hidden="true">
+                        <?= icon('chevron-left', 15) ?><span>Previous</span>
+                    </span>
+                <?php endif; ?>
+
+                <?php if ($current < $pages): ?>
+                    <a class="mpager__step mpager__step--next" href="<?= $step($current + 1) ?>" rel="next">
+                        <span>Next</span><?= icon('chevron-right', 15) ?>
+                    </a>
+                <?php else: ?>
+                    <span class="mpager__step is-disabled" aria-hidden="true">
+                        <span>Next</span><?= icon('chevron-right', 15) ?>
+                    </span>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+    <?php
 }
 
 /** Shown when a filtered list has no rows. */
@@ -360,14 +558,26 @@ function render_delete_form(string $postTo, int $id, string $label = 'Delete'): 
         . '</form>';
 }
 
-/** A small monogram standing in for a photograph. */
+/**
+ * A small monogram standing in for a photograph.
+ *
+ * A linked monogram is a link, so it is given an accessible name from the
+ * person's name rather than being hidden: hiding it would leave a focusable
+ * control with nothing to announce. The decorative case, where the monogram
+ * only repeats a name printed beside it, stays hidden from assistive tech.
+ */
 function render_avatar(string $first, string $last, string $href = ''): string
 {
-    $tag = $href !== '' ? 'a' : 'span';
-    $attributes = $href !== '' ? ' href="' . e($href) . '"' : '';
+    $name = trim($first . ' ' . $last);
+    $monogram = e(initials($first, $last));
 
-    return '<' . $tag . ' class="avatar"' . $attributes . ' aria-hidden="true">'
-        . e(initials($first, $last)) . '</' . $tag . '>';
+    if ($href === '') {
+        return '<span class="avatar" aria-hidden="true">' . $monogram . '</span>';
+    }
+
+    return '<a class="avatar" href="' . e($href) . '"'
+        . ' aria-label="' . e($name !== '' ? $name : 'View record') . '">'
+        . '<span aria-hidden="true">' . $monogram . '</span></a>';
 }
 
 // =====================================================================
@@ -375,7 +585,41 @@ function render_avatar(string $first, string $last, string $href = ''): string
 // =====================================================================
 
 /**
+ * The ARIA attributes a control needs to expose the state of its field.
+ *
+ * `field()` draws the message and the hint but receives the control as
+ * finished markup, so the builders ask for these attributes here and both
+ * sides derive the same ids from the same field id. Without this a
+ * validation failure is visible but silent to a screen reader.
+ */
+function field_aria(string $id, ?string $hint = null): string
+{
+    if ($id === '') {
+        return '';
+    }
+
+    $described = [];
+    $invalid = error_for($id) !== null;
+    if ($invalid) {
+        $described[] = $id . '-error';
+    }
+    if ($hint !== null && $hint !== '' && !$invalid) {
+        $described[] = $id . '-hint';
+    }
+
+    $attributes = $invalid ? ' aria-invalid="true"' : '';
+    if ($described !== []) {
+        $attributes .= ' aria-describedby="' . e(implode(' ', $described)) . '"';
+    }
+
+    return $attributes;
+}
+
+/**
  * Wrap a control in a labelled field, including its error message.
+ *
+ * The hint and the error share the control's `aria-describedby` list, so the
+ * builder is given the matching ids by field_aria() and the two stay in step.
  *
  * @param string $label    Visible label text.
  * @param string $control  The input/select markup.
@@ -385,16 +629,25 @@ function field(string $label, string $control, array $options = []): string
 {
     $id = $options['id'] ?? '';
     $error = $id !== '' ? error_for($id) : null;
+    $hint = !empty($options['hint']) ? (string) $options['hint'] : null;
     $classes = 'field' . (!empty($options['wide']) ? ' field--wide' : '');
 
+    $labelFor = $id !== '' ? ' for="' . e($id) . '"' : '';
+
+    $after = '';
+    if ($error !== null) {
+        $after = '<p class="field__error" id="' . e($id) . '-error">'
+            . icon('alert', 13) . e($error) . '</p>';
+    } elseif ($hint !== null) {
+        $after = '<p class="field__hint" id="' . e($id) . '-hint">' . e($hint) . '</p>';
+    }
+
     return '<div class="' . $classes . '">'
-        . '<label class="field__label" for="' . e($id) . '">' . e($label)
+        . '<label class="field__label"' . $labelFor . '>' . e($label)
         . (!empty($options['required']) ? '<span class="field__req" aria-hidden="true">*</span>' : '')
         . '</label>'
         . '<div class="field__control' . ($error !== null ? ' is-invalid' : '') . '">' . $control . '</div>'
-        . ($error !== null ? '<p class="field__error">' . icon('alert', 13) . e($error) . '</p>' : '')
-        . (!empty($options['hint']) && $error === null
-            ? '<p class="field__hint">' . e($options['hint']) . '</p>' : '')
+        . $after
         . '</div>';
 }
 
@@ -417,6 +670,7 @@ function text_field(string $name, string $label, array $options = []): string
     if (!empty($options['inputmode']))    $attributes .= ' inputmode="' . e($options['inputmode']) . '"';
     if (!empty($options['required']))     $attributes .= ' required';
     if (!empty($options['readonly']))     $attributes .= ' readonly';
+    $attributes .= field_aria($id, $options['hint'] ?? null);
 
     return field($label, '<input type="' . e($type) . '" id="' . e($id) . '" name="' . e($name) . '"'
         . ' value="' . e((string) $value) . '"' . $attributes . '>', $options + ['id' => $id]);
@@ -434,9 +688,7 @@ function select_field(string $name, string $label, array $options_list, array $o
 
     $attributes = '';
     if (!empty($options['required']))  $attributes .= ' required';
-    if (!empty($options['placeholder'])) {
-        $attributes .= ' data-has-placeholder="1"';
-    }
+    $attributes .= field_aria($id, $options['hint'] ?? null);
 
     return field($label, '<select id="' . e($id) . '" name="' . e($name) . '"' . $attributes . '>'
         . options($options_list, $value, $options['placeholder'] ?? '')
@@ -454,6 +706,7 @@ function textarea_field(string $name, string $label, array $options = []): strin
     if (!empty($options['maxlength'])) $attributes .= ' maxlength="' . (int) $options['maxlength'] . '"';
     if (!empty($options['placeholder'])) $attributes .= ' placeholder="' . e($options['placeholder']) . '"';
     if (!empty($options['required']))  $attributes .= ' required';
+    $attributes .= field_aria($id, $options['hint'] ?? null);
 
     return field($label, '<textarea id="' . e($id) . '" name="' . e($name) . '"' . $attributes . '>'
         . e((string) $value) . '</textarea>', $options + ['id' => $id]);

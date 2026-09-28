@@ -1,0 +1,25 @@
+{
+  "name": "Hagmah University Registrar",
+  "short_name": "Registrar",
+  "description": "Student records, teaching structure, enrolments and results for Hagmah University.",
+  "id": "./dashboard.php",
+  "start_url": "./dashboard.php",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f4f4",
+  "theme_color": "#111111",
+  "icons": [
+    {
+      "src": "assets/img/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/img/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

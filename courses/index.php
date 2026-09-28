@@ -63,7 +63,7 @@ $types  = '';
 if ($search !== '') {
     $where[] = '(c.`course_code` LIKE ? OR c.`course_name` LIKE ? OR c.`description` LIKE ?'
         . ' OR CONCAT(l.`first_name`, \' \', l.`last_name`) LIKE ?)';
-    $like = '%' . $search . '%';
+    $like = like_param($search);
     array_push($params, $like, $like, $like, $like);
     $types .= 'ssss';
 }

@@ -77,7 +77,17 @@ delete guards:
 ## Demo accounts
 
 These are printed on `auth/login.php` on purpose so the project can be tried
-immediately. **Remove that hint block before putting this on a real server.**
+immediately. That hint block is behind `APP_DEMO_MODE`, which is **on** by
+default for exactly that reason, and can be switched off for a real
+installation either by creating an empty `config/demo.off.local.php`
+(gitignored) or with the environment variable:
+
+```powershell
+setx APP_DEMO_MODE 0    # then restart Apache
+```
+
+The accounts are seeded by `database.sql`; change the passwords or drop the
+users, not just the hint.
 
 | Username | Password | Role | Sees |
 |---|---|---|---|
@@ -134,6 +144,44 @@ mark, so a stored letter can never disagree with its mark.
 
 ---
 
+## On a phone
+
+The same application, drawn for a thumb. There is no second set of screens and
+no second set of queries: `includes/mobile.php` decides, from the request, which
+shell to draw, and the page above it is the same page either way. A record saved
+on a phone is the record the desktop shows, because it is the same code path.
+
+What changes is the chrome and the furniture:
+
+| | Phone | Desktop |
+|---|---|---|
+| Navigation | Four-item bar at the foot of the screen, plus a full module index at `/m/` | Persistent rail, collapsed to a menu below 900px |
+| Lists | Search at full width, filters behind a fold, previous/next instead of a numbered pager | Search, filters and page size in one row |
+| Tables | Each row becomes a labelled card, the heading copied onto each cell | A real table |
+| Forms | One column, 16px controls so iOS does not zoom, and a save bar pinned to the foot | Multi-column grid |
+| Targets | Nothing tappable is under 44px | Sized for a pointer |
+| Notches | `viewport-fit=cover`, with `env(safe-area-inset-*)` on the bars | — |
+
+**Which shell you get.** A measured viewport width is preferred, because a user
+agent cannot tell a phone from a narrow desktop window; `assets/js/mobile.js`
+reports the width on each page and the server reads it from a one-day cookie.
+The user agent is the fallback, and a tablet is treated as a desktop. To choose
+by hand, use `?view=mobile` or `?view=desktop`: the choice is remembered in the
+session, so following a link from one shell to the other does not bounce you
+back. The phone footer carries both links.
+
+**Installable.** `manifest.webmanifest` and `sw.js` make it an app. The service
+worker is deliberately narrow: it precaches the stylesheets, scripts and icons,
+and **never** a page. Every screen in this application is behind a session, so
+caching an HTML response would put one person's records on another person's
+screen. Navigations go to the network, and are answered with a small offline
+page when there is none.
+
+To try it in a desktop browser, resize the window narrow and reload, or open
+any page with `?view=mobile`.
+
+---
+
 ## Tests
 
 `tools/smoke_modules.ps1` drives a real HTTP session against the running app:
@@ -148,9 +196,21 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_modules.ps1
 
 Current result: **86 checks, 0 failures.**
 
-The suite creates and removes its own rows, so a green run leaves the database
-exactly as it found it. It exits non-zero on any failure, so it works as a CI
-step.
+`tools/smoke_mobile.ps1` covers what is only true for the phone: that a
+phone-width request is given the mobile shell and a desktop one is not, that
+every kind of screen carries the phone's own furniture, that a create-and-delete
+round trip still works through the shell, and that switching shell in either
+direction sticks.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_mobile.ps1
+```
+
+Current result: **132 checks, 0 failures.**
+
+Both suites create and remove their own rows, so a green run leaves the database
+exactly as it found it. They exit non-zero on any failure, so they work as CI
+steps.
 
 To probe a single page by hand, dot-source the harness:
 
@@ -164,7 +224,9 @@ Diagnostics $r.Html            # $null means no PHP diagnostics leaked into the 
 
 `Http-Get` and `Post-Form` return both `.Status` and `.Html`. `Post-Form`
 carries the CSRF token; `Http-Post` does not, so it cannot be used for anything
-that writes.
+that writes. Set `$Global:Agent` to a mobile user agent to make the harness
+arrive as a phone, and pass `-Cookie 'ums_viewport=390'` to send the viewport
+width a real device would have reported.
 
 ### Syntax check
 
@@ -182,6 +244,8 @@ UMS/
 ├── auth/                login.php and logout.php
 ├── dashboard.php        Landing page, deep links into each module
 ├── database.sql         Schema, constraints and seed data
+├── manifest.webmanifest Installable-app description for the phone build
+├── sw.js                Service worker; static assets only, never a page
 ├── assets/              One stylesheet, three scripts, no build step
 ├── config/              app.php and the gitignored database.php
 ├── includes/            The shared layer, described below
@@ -196,11 +260,13 @@ UMS/
 │   ├── error_page.php   The 403 / 404 / 500 page
 │   ├── flash.php        One-shot messages
 │   ├── icons.php        Inline SVG sprite
+│   ├── mobile.php       Which shell this request gets, and the phone's chrome
 │   └── layout.php       header.php, footer.php, layout.php,
 │                       navbar.php, sidebar.php
+├── m/                   The phone's module index; a desktop is sent onward
 ├── faculties/  departments/  lecturers/  courses/
 ├── students/   enrollments/  grades/  announcements/  users/
-└── tools/                smoke.ps1 and smoke_modules.ps1
+└── tools/                smoke.ps1, smoke_modules.ps1, smoke_mobile.ps1
 ```
 
 The module convention is the point of this layout. Every module has the same

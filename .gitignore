@@ -10,6 +10,10 @@
 # committed, so debugging cannot be left on by accident in a public checkout.
 /config/debug.local.php
 
+# Create this file to turn demonstration mode off, which stops the sign-in page
+# advertising the seeded accounts. Demonstration mode is on by default.
+/config/demo.off.local.php
+
 # Local environment overrides
 .env
 .env.*

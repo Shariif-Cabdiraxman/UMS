@@ -55,7 +55,7 @@ $types  = '';
 if ($search !== '') {
     $where[] = '(l.`staff_no` LIKE ? OR l.`first_name` LIKE ? OR l.`last_name` LIKE ?'
         . ' OR l.`email` LIKE ? OR l.`specialization` LIKE ?)';
-    $like = '%' . $search . '%';
+    $like = like_param($search);
     array_push($params, $like, $like, $like, $like, $like);
     $types .= 'sssss';
 }

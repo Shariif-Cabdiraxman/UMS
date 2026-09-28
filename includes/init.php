@@ -82,9 +82,9 @@ function render_database_unavailable(Throwable $exception): void
         'The database is not available',
         'The application could not connect to its MySQL database. On a fresh XAMPP install this '
         . 'usually means MySQL has not been started, or the database has not been imported yet.'
-        . ($detail !== '' ? ' <span class="mono">' . $detail . '</span>' : ''),
+        . ($detail !== '' ? ' The driver reported: ' . $detail : '') . '.',
         'Try again',
-        'javascript:location.reload()'
+        'reload'
     );
 }
 
@@ -101,9 +101,9 @@ set_exception_handler(function (Throwable $exception): void {
         500,
         'Something went wrong',
         'The request could not be completed. The problem has been written to the PHP error log.'
-        . (APP_DEBUG ? '<br><span class="mono">' . e($exception->getMessage()) . '</span>' : ''),
+        . (APP_DEBUG ? ' The message was: ' . $exception->getMessage() : ''),
         'Try again',
-        'javascript:location.reload()'
+        'reload'
     );
 });
 
@@ -157,7 +157,7 @@ register_shutdown_function(function (): void {
         . '<h1 class="errorpage__title">The request could not be completed</h1>'
         . '<p class="errorpage__message">The problem has been written to the PHP error log.</p>'
         . '<div class="errorpage__actions">'
-        . '<a class="btn btn--primary" href="javascript:location.reload()">Try again</a>'
+        . '<a class="btn btn--primary" href="' . e(current_url_path()) . '">Try again</a>'
         . '</div></main></body></html>';
 });
 

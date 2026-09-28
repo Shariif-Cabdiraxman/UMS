@@ -26,6 +26,10 @@
 #
 # Note: Page returns the HTML string only. Use Http-Get when the status code
 # matters, because the .Status property is not there to read.
+#
+# $Global:Agent, if set before the first request, is sent as the user agent for
+# every request the harness makes. The phone suite sets it so the application
+# answers with its mobile shell.
 
 $Global:Base = if ($env:UMS_BASE_URL) { $env:UMS_BASE_URL } else { "http://localhost/university-management-system" }
 $Global:Jar  = Join-Path $env:TEMP "hagmah-cookies.txt"
@@ -60,20 +64,26 @@ function Reset-Session {
 }
 
 function Http-Get {
-    param([string]$Path, [switch]$Raw)
+    param([string]$Path, [switch]$Raw, [string[]]$Headers = @(), [string]$Cookie = '')
     $url = if ($Path -like "http*") { $Path } else { $Global:Base + $Path }
     $args = @("-s", "-b", $Global:Jar, "-c", $Global:Jar, "-w", "`n__STATUS__%{http_code}")
     if ($Raw) { $args += "--raw" }
+    $args += (Curl-Identity)
+    $args += (Curl-ExtraCookie $Cookie)
+    $args += (Curl-Headers $Headers)
     $args += $url
     $out = & curl.exe @args
     return (Split-Http $out)
 }
 
 function Http-Post {
-    param([string]$Path, [hashtable]$Body, [switch]$NoFollow)
+    param([string]$Path, [hashtable]$Body, [switch]$NoFollow, [string[]]$Headers = @(), [string]$Cookie = '')
     $url = if ($Path -like "http*") { $Path } else { $Global:Base + $Path }
     $args = @("-s", "-b", $Global:Jar, "-c", $Global:Jar, "-L", "-w", "`n__STATUS__%{http_code}")
     if ($NoFollow) { $args = $args -replace "-L", "" }
+    $args += (Curl-Identity)
+    $args += (Curl-ExtraCookie $Cookie)
+    $args += (Curl-Headers $Headers)
     $args += "-e"
     $args += $url
     foreach ($key in $Body.Keys) {
@@ -83,6 +93,35 @@ function Http-Post {
     $args += $url
     $out = & curl.exe @args
     return (Split-Http $out)
+}
+
+# The application chooses a shell from the request, so a suite that is checking
+# the phone interface has to arrive as a phone. $Global:Agent is set once at the
+# top of such a suite and applies to every request it makes; leaving it unset
+# keeps curl's own identity, which is what the desktop suite wants.
+function Curl-Identity {
+    if ($Global:Agent) { return @("-A", $Global:Agent) }
+    return @()
+}
+
+# An extra cookie alongside the jar, which is how the phone suite sends the
+# viewport width a real device would have reported through assets/js/mobile.js.
+# Passed as a second -b rather than a Cookie: header, because a header of that
+# name replaces the jar's cookies for the request instead of adding to them,
+# which would quietly sign the suite out.
+function Curl-ExtraCookie {
+    param([string]$Cookie)
+    if ($Cookie) { return @("-b", $Cookie) }
+    return @()
+}
+
+function Curl-Headers {
+    param([string[]]$Headers)
+    $args = @()
+    foreach ($header in $Headers) {
+        if ($header) { $args += @("-H", $header) }
+    }
+    return $args
 }
 
 function Split-Http {

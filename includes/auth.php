@@ -207,8 +207,8 @@ function require_permission(string $permission): void
     render_error_page(
         403,
         'You do not have access to this section',
-        'Your account is signed in as ' . e($user['full_name'] ?? 'a user') . ' with the '
-        . e(humanize($user['role'] ?? '')) . ' role. This action is reserved for an administrator.',
+        'Your account is signed in as ' . ($user['full_name'] ?? 'a user') . ' with the '
+        . humanize($user['role'] ?? '') . ' role. This action is reserved for an administrator.',
         'Go to the dashboard',
         'dashboard.php'
     );
@@ -343,15 +343,15 @@ function verify_csrf(): void
     $submitted = $_POST['csrf_token'] ?? '';
 
     if (!is_string($submitted) || !hash_equals(csrf_token(), $submitted)) {
-        render_error_page(
-            419,
-            'That form could not be verified',
-            'The security token on the form was missing or out of date, so the request was '
-            . 'stopped before anything was changed. This usually happens when a page was left '
-            . 'open for a long time. Please go back, reload the page and try again.',
-            'Reload the page',
-            'javascript:history.go(-1)'
-        );
+    render_error_page(
+        419,
+        'That form could not be verified',
+        'The security token on the form was missing or out of date, so the request was '
+        . 'stopped before anything was changed. This usually happens when a page was left '
+        . 'open for a long time. Please go back, reload the page and try again.',
+        'Reload the page',
+        'reload'
+    );
     }
 }
 
