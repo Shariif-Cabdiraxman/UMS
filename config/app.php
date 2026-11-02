@@ -13,8 +13,8 @@ declare(strict_types=1);
 // Product identity
 // ---------------------------------------------------------------------
 define('APP_NAME', 'Campus Manager');
-define('APP_TAGLINE', 'Campus Management System');
-define('APP_SHORT', 'CAMPUS');
+define('APP_TAGLINE', 'Administration Suite');
+define('APP_SHORT', 'CAMPUS MANAGER');
 
 // ---------------------------------------------------------------------
 // Paths
