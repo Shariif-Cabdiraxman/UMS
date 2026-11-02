@@ -183,8 +183,8 @@ function render_sidebar(string $active = ''): void
             <div class="sidebar__foot">
                 <div class="signedin">
                     <?= render_avatar(
-                        mb_substr((string) ($user['full_name'] ?? ''), 0, 1),
-                        mb_substr(explode(' ', (string) ($user['full_name'] ?? ''))[1] ?? '', 0, 1)
+                        (string) ($user['full_name'] ?? ''),
+                        ''
                     ) ?>
                     <div class="signedin__text">
                         <p class="signedin__name"><?= e($user['full_name'] ?? '') ?></p>

@@ -1,7 +1,7 @@
 {
-  "name": "Hagmah University Registrar",
-  "short_name": "Registrar",
-  "description": "Student records, teaching structure, enrolments and results for Hagmah University.",
+  "name": "Campus Manager",
+  "short_name": "Campus Manager",
+  "description": "Student records, teaching structure, enrolments and results in one place.",
   "id": "./dashboard.php",
   "start_url": "./dashboard.php",
   "scope": "./",

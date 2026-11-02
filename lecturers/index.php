@@ -159,8 +159,13 @@ if ($rows === []) {
                 <tr>
                     <td class="table__id nowrap"><?= e($row['staff_no']) ?></td>
                     <td>
-                        <a class="strong" href="<?= e(url('lecturers/view.php?id=' . (int) $row['id'])) ?>"><?= e(full_name($row['first_name'], $row['last_name'])) ?></a>
-                        <span class="table__sub"><?= e($row['email']) ?></span>
+                        <div class="table__person">
+                            <?= render_avatar($row['first_name'], $row['last_name'], url('lecturers/view.php?id=' . (int) $row['id'])) ?>
+                            <span class="table__persontext">
+                                <a class="strong" href="<?= e(url('lecturers/view.php?id=' . (int) $row['id'])) ?>"><?= e(full_name($row['first_name'], $row['last_name'])) ?></a>
+                                <span class="table__sub"><?= e($row['email']) ?></span>
+                            </span>
+                        </div>
                     </td>
                     <td>
                         <a class="table__name" href="<?= e(url('departments/view.php?id=' . (int) $row['department_id'])) ?>"><?= e($row['department_name']) ?></a>

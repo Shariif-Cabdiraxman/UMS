@@ -184,15 +184,17 @@ if ($rows === []) {
             <?php foreach ($rows as $row): ?>
                 <tr>
                     <td>
-                        <?= render_avatar(
-                            mb_substr((string) $row['full_name'], 0, 1),
-                            mb_substr(explode(' ', (string) $row['full_name'])[1] ?? '', 0, 1),
-                            'users/view.php?id=' . (int) $row['id']
-                        ) ?>
-                        <span class="table__ident">
-                            <a class="strong" href="<?= e(url('users/view.php?id=' . (int) $row['id'])) ?>"><?= e($row['full_name']) ?></a>
-                            <span class="table__sub"><?= e($row['email']) ?></span>
-                        </span>
+                        <div class="table__person">
+                            <?= render_avatar(
+                                (string) $row['full_name'],
+                                '',
+                                url('users/view.php?id=' . (int) $row['id'])
+                            ) ?>
+                            <span class="table__persontext">
+                                <a class="strong" href="<?= e(url('users/view.php?id=' . (int) $row['id'])) ?>"><?= e($row['full_name']) ?></a>
+                                <span class="table__sub"><?= e($row['email']) ?></span>
+                            </span>
+                        </div>
                     </td>
                     <td><span class="table__id"><?= e($row['username']) ?></span></td>
                     <td><?= role_badge($row['role']) ?></td>

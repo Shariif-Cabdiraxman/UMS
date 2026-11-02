@@ -115,7 +115,7 @@ foreach ($enrollments as $enrollment) {
 
 <div class="profile-layout">
     <aside class="profile-card">
-        <div class="profile-card__avatar" aria-hidden="true"><?= e(initials($student['first_name'], $student['last_name'])) ?></div>
+        <div class="profile-card__avatar" aria-hidden="true"><?= icon('student', 36) ?></div>
         <h2 class="profile-card__name"><?= e($name) ?></h2>
         <p class="profile-card__role">
             <?= e($programme['department_name'] ?? 'No department') ?>

@@ -104,8 +104,8 @@ function render_topbar(string $active = ''): void
                 <summary class="usermenu__trigger">
                     <span class="usermenu__avatar-wrap">
                         <?= render_avatar(
-                            mb_substr((string) ($user['full_name'] ?? ''), 0, 1),
-                            mb_substr(explode(' ', (string) ($user['full_name'] ?? ''))[1] ?? '', 0, 1)
+                            (string) ($user['full_name'] ?? ''),
+                            ''
                         ) ?>
                     </span>
                     <span class="usermenu__meta">

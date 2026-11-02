@@ -74,8 +74,8 @@ render_page_head([
         . '<a class="btn btn--quiet" href="' . e(url($path)) . '">' . icon('arrow-left', 15) . '<span>Back to list</span></a>',
 ]);
 
-$first = mb_substr((string) $user['full_name'], 0, 1);
-$last  = mb_substr(explode(' ', (string) $user['full_name'])[1] ?? '', 0, 1);
+$first = (string) $user['full_name'];
+$last  = '';
 ?>
 
 <section class="recordhead">

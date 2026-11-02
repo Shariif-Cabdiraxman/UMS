@@ -55,16 +55,16 @@ function render_document_head(string $title, array $options = []): void
         <meta name="viewport" content="<?= e((string) ($options['viewport'] ?? 'width=device-width, initial-scale=1')) ?>">
         <meta name="description" content="<?= e($options['description'] ?? (APP_NAME . ' — ' . APP_TAGLINE)) ?>">
         <meta name="color-scheme" content="light dark">
-        <meta name="theme-color" content="#073D32">
+        <meta name="theme-color" content="#313131">
         <title><?= e($fullTitle) ?></title>
 
-        <script src="<?= e(url('assets/js/sidebar-state.js?v=20261101-v1')) ?>"></script>
+        <script src="<?= e(url('assets/js/sidebar-state.js?v=20261102-sidebar-v2')) ?>"></script>
 
         <link rel="icon" href="<?= e(url('assets/img/favicon.svg')) ?>" type="image/svg+xml">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-        <link rel="stylesheet" href="<?= e(url('assets/css/style.css?v=20261102-auth-4')) ?>">
+        <link rel="stylesheet" href="<?= e(url('assets/css/style.css?v=20261102-monochrome-6')) ?>">
         <?php foreach ((array) ($options['styles'] ?? []) as $style): ?>
             <link rel="stylesheet" href="<?= e(url((string) $style)) ?>">
         <?php endforeach; ?>
@@ -101,14 +101,14 @@ function render_standalone_head(string $title, array $options = []): void
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="color-scheme" content="light dark">
-        <meta name="theme-color" content="#073D32">
+        <meta name="theme-color" content="#313131">
         <meta name="robots" content="noindex">
         <title><?= e($fullTitle) ?></title>
         <link rel="icon" href="<?= e(url('assets/img/favicon.svg')) ?>" type="image/svg+xml">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-        <link rel="stylesheet" href="<?= e(url('assets/css/style.css?v=20261102-auth-4')) ?>">
+        <link rel="stylesheet" href="<?= e(url('assets/css/style.css?v=20261102-monochrome-6')) ?>">
         <?php if (!empty($options['meta'])): ?>
             <meta name="description" content="<?= e((string) $options['meta']) ?>">
         <?php endif; ?>
@@ -128,7 +128,7 @@ function render_document_foot(array $options = []): void
     // app.js always loads; anything extra follows it.
     $scripts = $options['scripts'] ?? [];
     ?>
-    <script src="<?= e(url('assets/js/app.js?v=20261101-sidebar-v1')) ?>" defer></script>
+    <script src="<?= e(url('assets/js/app.js?v=20261102-sidebar-v2')) ?>" defer></script>
     <?php foreach ($scripts as $script): ?>
         <script src="<?= e(url((string) $script)) ?>" defer></script>
     <?php endforeach; ?>

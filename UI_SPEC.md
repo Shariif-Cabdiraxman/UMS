@@ -1,4 +1,4 @@
-# HAGMAH Registrar Dashboard UI Spec
+# Campus Manager Dashboard UI Spec
 
 ## Reference and measurement note
 
@@ -48,7 +48,7 @@ Plus Jakarta Sans is the single family for headings, labels, and body copy, with
 
 ## Component inventory
 
-| TeamHub pattern | HAGMAH component |
+| TeamHub pattern | Campus Manager component |
 | --- | --- |
 | Active mint navigation pill | `includes/sidebar.php` `.nav__link.is-active` |
 | Search, round actions, user chip | `includes/navbar.php` `.topbar` |
@@ -67,4 +67,4 @@ Plus Jakarta Sans is the single family for headings, labels, and body copy, with
 
 ## Fidelity limitations
 
-The image needed for measured sampling and side-by-side comparison was not present in the attachment. The exact TeamHub logo, its image-specific values, a calendar data source, and Privacy / Terms destinations are unavailable. HAGMAH branding, existing routes, data, and server-side behavior are retained.
+The image needed for measured sampling and side-by-side comparison was not present in the attachment. The exact TeamHub logo, its image-specific values, a calendar data source, and Privacy / Terms destinations are unavailable. Campus Manager branding, existing routes, data, and server-side behavior are retained.

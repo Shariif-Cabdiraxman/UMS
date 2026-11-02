@@ -10,11 +10,11 @@
 declare(strict_types=1);
 
 // ---------------------------------------------------------------------
-// Identity of the institution
+// Product identity
 // ---------------------------------------------------------------------
-define('APP_NAME', 'Hagmah University');
-define('APP_TAGLINE', "Registrar's Office");
-define('APP_SHORT', 'HAGMAH');
+define('APP_NAME', 'Campus Manager');
+define('APP_TAGLINE', 'Campus Management System');
+define('APP_SHORT', 'CAMPUS');
 
 // ---------------------------------------------------------------------
 // Paths

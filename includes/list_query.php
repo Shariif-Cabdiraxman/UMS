@@ -578,25 +578,24 @@ function render_delete_form(string $postTo, int $id, string $label = 'Delete'): 
 }
 
 /**
- * A small monogram standing in for a photograph.
+ * A simple person icon standing in for a photograph.
  *
- * A linked monogram is a link, so it is given an accessible name from the
- * person's name rather than being hidden: hiding it would leave a focusable
- * control with nothing to announce. The decorative case, where the monogram
- * only repeats a name printed beside it, stays hidden from assistive tech.
+ * A linked avatar is a link, so it is given an accessible name from the
+ * person's name rather than being hidden. Decorative avatars stay hidden
+ * from assistive tech because the person's name is printed beside them.
  */
 function render_avatar(string $first, string $last, string $href = ''): string
 {
     $name = trim($first . ' ' . $last);
-    $monogram = e(initials($first, $last));
+    $person = icon('student', 16, 'avatar__icon');
 
     if ($href === '') {
-        return '<span class="avatar" aria-hidden="true">' . $monogram . '</span>';
+        return '<span class="avatar" aria-hidden="true">' . $person . '</span>';
     }
 
     return '<a class="avatar" href="' . e($href) . '"'
         . ' aria-label="' . e($name !== '' ? $name : 'View record') . '">'
-        . '<span aria-hidden="true">' . $monogram . '</span></a>';
+        . '<span aria-hidden="true">' . $person . '</span></a>';
 }
 
 // =====================================================================

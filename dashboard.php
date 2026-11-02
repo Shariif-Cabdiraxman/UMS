@@ -533,7 +533,7 @@ layout_start('Dashboard', 'dashboard');
                 <div class="campus-card-widget__card">
                     <div class="campus-card-widget__top">
                         <span class="campus-card-widget__chip"></span>
-                        <span class="campus-card-widget__brand">HAGMAH CMS</span>
+                        <span class="campus-card-widget__brand">CAMPUS MANAGER</span>
                     </div>
                     <div class="campus-card-widget__number">•••• •••• •••• <?= e(substr((string) ($user['id'] ?? '1000'), -4)) ?></div>
                     <div class="campus-card-widget__bottom">
@@ -600,7 +600,8 @@ layout_start('Dashboard', 'dashboard');
                     <span class="chart-period">Last 8 months</span>
                 </div>
                 <div class="dash-card__body">
-                    <?php render_monthly_enrollment_chart($monthlyEnrollments, $totals['enrollments']); ?>
+                    <p class="column-chart__total"><?= e(number_format((int) $totals['enrollments'])) ?><span>enrollments recorded</span></p>
+                    <?php render_area_chart($monthlyEnrollments, 'Monthly enrollment volume'); ?>
                 </div>
             </section>
 
@@ -664,10 +665,14 @@ layout_start('Dashboard', 'dashboard');
                 <div class="dash-card__header">
                     <div>
                         <h2 class="dash-card__title">This Month</h2>
-                        <p class="dash-card__sub">Enrollment dates in <?= e(date('F Y')) ?></p>
+                        <p class="dash-card__sub">Enrollment activity calendar</p>
                     </div>
                 </div>
                 <div class="dash-card__body">
+                    <div class="month-overview">
+                        <span class="month-overview__date"><strong><?= e(date('j')) ?></strong><span><?= e(date('D')) ?></span></span>
+                        <span class="month-overview__summary"><strong><?= e((string) count($eventDays)) ?> enrollment dates</strong><span>Current month</span></span>
+                    </div>
                     <?php render_mini_calendar((int) date('Y'), (int) date('n'), $eventDays); ?>
                 </div>
             </section>

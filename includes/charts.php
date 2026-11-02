@@ -143,7 +143,7 @@ function render_area_chart(array $rows, string $label = 'Monthly activity'): voi
     <?php
 }
 
-/** A grade donut with the pass rate in the center and an accessible legend. */
+/** A proportional monochrome grade bar with the pass rate and an accessible legend. */
 function render_grade_donut(array $distribution, int $total, float $passRate): void
 {
     if ($total === 0) {
@@ -152,24 +152,14 @@ function render_grade_donut(array $distribution, int $total, float $passRate): v
         return;
     }
 
-    $palette = ['A' => 'var(--grade-a)', 'B' => 'var(--grade-b)', 'C' => 'var(--grade-c)', 'D' => 'var(--grade-d)', 'F' => 'var(--grade-f)'];
-    $stops = [];
-    $cursor = 0.0;
-    foreach ($distribution as $row) {
-        if ($row['count'] <= 0) { continue; }
-        $next = $cursor + (($row['count'] / $total) * 100);
-        $color = $palette[$row['letter']] ?? 'var(--text-3)';
-        $stops[] = $color . ' ' . number_format($cursor, 2, '.', '') . '% ' . number_format($next, 2, '.', '') . '%';
-        $cursor = $next;
-    }
     ?>
     <div class="grade-overview">
-        <div class="grade-donut" style="--grade-ring: conic-gradient(<?= e(implode(', ', $stops)) ?>)"
-             role="img" aria-label="Grade distribution across <?= e(number_format($total)) ?> marks; pass rate <?= e(number_format($passRate, 1)) ?> percent">
-            <div class="grade-donut__center">
-                <strong><?= e(number_format($passRate, 1)) ?>%</strong>
-                <span>Pass rate</span>
-            </div>
+        <div class="grade-overview__summary"><strong><?= e(number_format($passRate, 1)) ?>% <span>pass rate</span></strong><span><?= e(number_format($total)) ?> marks</span></div>
+        <div class="grade-donut" role="img" aria-label="Grade distribution across <?= e(number_format($total)) ?> marks; pass rate <?= e(number_format($passRate, 1)) ?> percent">
+            <?php foreach ($distribution as $row): ?>
+                <?php if ($row['count'] <= 0) { continue; } ?>
+                <span class="grade-donut__segment grade-donut__segment--<?= e(strtolower($row['letter'])) ?>" style="width: <?= e(number_format(($row['count'] / $total) * 100, 3)) ?>%" title="<?= e($row['letter']) ?>: <?= e(number_format($row['count'])) ?>"></span>
+            <?php endforeach; ?>
         </div>
         <ul class="grade-legend" aria-label="Grade counts and percentages">
             <?php foreach ($distribution as $row): ?>
@@ -359,8 +349,8 @@ function render_line_chart(array $rows, array $options = []): void
              ))) ?>">
             <defs>
                 <linearGradient id="<?= e($gradientId) ?>" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#6d3bff" stop-opacity="0.24"/>
-                    <stop offset="100%" stop-color="#6d3bff" stop-opacity="0"/>
+                    <stop offset="0%" stop-color="#545454" stop-opacity="0.24"/>
+                    <stop offset="100%" stop-color="#545454" stop-opacity="0"/>
                 </linearGradient>
             </defs>
 
@@ -414,7 +404,7 @@ function render_donut_chart(array $rows, array $options = []): void
 
     $palette = [
         'var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)',
-        'var(--chart-5)', '#f59e0b', '#ec4899', '#fb7185',
+        'var(--chart-5)', '#A6A6A6', '#717171', '#909090',
     ];
     $stops = [];
     $cursor = 0.0;

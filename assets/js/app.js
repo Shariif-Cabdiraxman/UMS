@@ -1,5 +1,5 @@
 /**
- * Hagmah University — Registrar's Office
+ * Campus Manager — Campus Management System
  * Progressive enhancement.
  *
  * Everything here is an addition to markup that already works. The
@@ -108,7 +108,7 @@
                 }
                 pinned = !pinned;
                 window.hagmahSidebarStored = pinned ? 'expanded' : 'collapsed';
-                try { localStorage.setItem('hagmah-sidebar-pinned', window.hagmahSidebarStored); } catch (e) { /* keep current page functional */ }
+                try { localStorage.setItem('hagmah-sidebar-pinned-v2', window.hagmahSidebarStored); } catch (e) { /* keep current page functional */ }
                 sync();
             });
         }
