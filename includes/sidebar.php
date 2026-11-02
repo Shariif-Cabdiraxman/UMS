@@ -181,14 +181,6 @@ function render_sidebar(string $active = ''): void
             </div>
 
             <div class="sidebar__foot">
-                <div class="sidebar__promo">
-                    <p class="sidebar__promotitle">Student records</p>
-                    <p class="sidebar__promotext">Keep the register current this term. Every enrolment updates the dashboard instantly.</p>
-                    <a class="sidebar__promobtn" href="<?= e(url('students/index.php')) ?>">
-                        <?= icon('user-plus', 13) ?><span>Open student list</span>
-                    </a>
-                </div>
-
                 <div class="signedin">
                     <?= render_avatar(
                         mb_substr((string) ($user['full_name'] ?? ''), 0, 1),

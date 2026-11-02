@@ -64,7 +64,7 @@ function render_document_head(string $title, array $options = []): void
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-        <link rel="stylesheet" href="<?= e(url('assets/css/style.css?v=20261101-performance-labels-4')) ?>">
+        <link rel="stylesheet" href="<?= e(url('assets/css/style.css?v=20261102-auth-4')) ?>">
         <?php foreach ((array) ($options['styles'] ?? []) as $style): ?>
             <link rel="stylesheet" href="<?= e(url((string) $style)) ?>">
         <?php endforeach; ?>
@@ -108,7 +108,7 @@ function render_standalone_head(string $title, array $options = []): void
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-        <link rel="stylesheet" href="<?= e(url('assets/css/style.css?v=20261101-performance-labels-4')) ?>">
+        <link rel="stylesheet" href="<?= e(url('assets/css/style.css?v=20261102-auth-4')) ?>">
         <?php if (!empty($options['meta'])): ?>
             <meta name="description" content="<?= e((string) $options['meta']) ?>">
         <?php endif; ?>

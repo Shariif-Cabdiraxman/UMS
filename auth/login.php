@@ -59,53 +59,21 @@ render_standalone_head('');
 $demoAccounts = demo_accounts();
 ?>
 <div class="auth">
+    <main class="auth__shell">
 
-    <section class="auth__intro">
-        <div class="auth__brand">
-            <span class="auth__mark"><?= brand_mark(46) ?></span>
-            <div>
-                <p class="auth__institution"><?= e(APP_NAME) ?></p>
-                <p class="auth__office"><?= e(APP_TAGLINE) ?></p>
-            </div>
-        </div>
+        <header class="auth__brand">
+            <span class="auth__mark"><?= brand_mark(30) ?></span>
+            <span class="auth__brandtext">
+                <span class="auth__institution"><?= e(APP_NAME) ?></span>
+                <span class="auth__office"><?= e(APP_TAGLINE) ?></span>
+            </span>
+        </header>
 
-        <h1 class="auth__headline">The university record,<br>kept in one place.</h1>
-
-        <p class="auth__lede">
-            Student records, teaching structure, enrollments and results for the
-            whole institution — maintained in one system rather than a folder per office.
-        </p>
-
-        <ul class="auth__facts">
-            <li>
-                <span class="auth__facticon"><?= icon('student', 16) ?></span>
-                <div>
-                    <strong>Student records</strong>
-                    <span>Enrolment, contact details and status</span>
-                </div>
-            </li>
-            <li>
-                <span class="auth__facticon"><?= icon('faculty', 16) ?></span>
-                <div>
-                    <strong>Academic structure</strong>
-                    <span>Faculties, departments and teaching staff</span>
-                </div>
-            </li>
-            <li>
-                <span class="auth__facticon"><?= icon('grades', 16) ?></span>
-                <div>
-                    <strong>Enrolment and results</strong>
-                    <span>Courses, credits and grades</span>
-                </div>
-            </li>
-        </ul>
-    </section>
-
-    <section class="auth__panel">
-        <div class="auth__card">
+        <section class="auth__card" aria-labelledby="auth-title">
             <div class="auth__cardhead">
-                <h2 class="auth__title">Sign in</h2>
-                <p class="auth__sub">Use the account issued to you by the registrar&rsquo;s office.</p>
+                <p class="auth__eyebrow">Secure access</p>
+                <h1 class="auth__title" id="auth-title">Welcome back</h1>
+                <p class="auth__sub">Sign in with the account issued by the registrar&rsquo;s office.</p>
             </div>
 
             <?php if ($flashes !== []): ?>
@@ -125,7 +93,7 @@ $demoAccounts = demo_accounts();
                 <div class="field<?= isset($errors['identifier']) ? ' is-invalid' : '' ?>">
                     <label class="field__label" for="identifier">Username or email</label>
                     <div class="field__control">
-                        <span class="field__leading"><?= icon('student', 16) ?></span>
+                        <span class="field__leading"><?= icon('student', 17) ?></span>
                         <input
                             type="text"
                             id="identifier"
@@ -146,7 +114,7 @@ $demoAccounts = demo_accounts();
                 <div class="field<?= isset($errors['password']) ? ' is-invalid' : '' ?>">
                     <label class="field__label" for="password">Password</label>
                     <div class="field__control">
-                        <span class="field__leading"><?= icon('lock', 16) ?></span>
+                        <span class="field__leading"><?= icon('lock', 17) ?></span>
                         <input
                             type="password"
                             id="password"
@@ -155,15 +123,16 @@ $demoAccounts = demo_accounts();
                             required
                             <?= isset($errors['password']) ? 'aria-invalid="true" aria-describedby="password-error"' : '' ?>>
                         <button class="field__reveal" type="button" data-reveal-password="password"
-                                aria-label="Show password" aria-pressed="false"><?= icon('eye', 16) ?></button>
+                                aria-label="Show password" aria-pressed="false"><?= icon('eye', 17) ?></button>
                     </div>
                     <?php if (isset($errors['password'])): ?>
                         <p class="field__error" id="password-error"><?= icon('alert', 13) ?><?= e($errors['password']) ?></p>
                     <?php endif; ?>
                 </div>
 
-                <button class="btn btn--primary btn--block btn--lg" type="submit">
-                    <?= icon('arrow-right', 17) ?><span>Sign in</span>
+                <button class="btn btn--primary btn--block" type="submit">
+                    <span>Sign in</span>
+                    <?= icon('arrow-right', 17) ?>
                 </button>
             </form>
 
@@ -174,21 +143,26 @@ $demoAccounts = demo_accounts();
                         <?php foreach ($demoAccounts as $demo): ?>
                             <div>
                                 <dt><?= e($demo['role']) ?></dt>
-                                <dd><code><?= e($demo['username']) ?></code> / <code><?= e($demo['password']) ?></code></dd>
+                                <dd><code><?= e($demo['username']) ?></code><span class="auth__demodiv">/</span><code><?= e($demo['password']) ?></code></dd>
                             </div>
                         <?php endforeach; ?>
                     </dl>
-                    <p class="auth__demonote">
-                        This installation is running in demonstration mode. To stop
-                        the sign-in page advertising these accounts, create an empty
-                        file <code>config/demo.off.local.php</code> or set
-                        <code>APP_DEMO_MODE=0</code>, and change the passwords before
-                        any real use.
-                    </p>
+                    <details class="auth__demomore">
+                        <summary>About these accounts</summary>
+                        <p class="auth__demonote">
+                            This installation is running in demonstration mode. To stop
+                            the sign-in page advertising these accounts, create an empty
+                            file <code>config/demo.off.local.php</code> or set
+                            <code>APP_DEMO_MODE=0</code>, and change the passwords before
+                            any real use.
+                        </p>
+                    </details>
                 </div>
             <?php endif; ?>
-        </div>
-    </section>
+        </section>
+
+        <p class="auth__foot"><?= e(APP_NAME) ?> &middot; <?= e(APP_TAGLINE) ?> &middot; <?= e(date('Y')) ?></p>
+    </main>
 </div>
 <?php
 render_document_foot();
