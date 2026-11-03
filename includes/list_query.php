@@ -228,14 +228,16 @@ function render_list_toolbar(array $options): void
         <?php endforeach; ?>
 
         <div class="toolbar__search">
-            <?= icon('search', 16) ?>
+            <?= icon('search', 17) ?>
             <input
                 type="search"
                 name="q"
                 value="<?= e(query_string('q')) ?>"
                 placeholder="<?= e($options['placeholder']) ?>"
                 aria-label="<?= e($options['placeholder']) ?>"
-                autocomplete="off">
+                autocomplete="off" spellcheck="false" enterkeyhint="search">
+            <a class="searchclear" href="<?= e(list_url($options['action']) . with_query(['q' => null])) ?>"
+               aria-label="Clear search" title="Clear search"><?= icon('x', 13) ?></a>
         </div>
 
         <?php if ($filters !== ''): ?>

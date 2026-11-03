@@ -226,6 +226,68 @@
     }
 
     // -----------------------------------------------------------------
+    // Search
+    //
+    // The field already submits as a normal GET form. This only adds the
+    // conveniences people expect now: a clear button, a platform-aware
+    // shortcut hint, Ctrl/Cmd+K and "/" to jump into the global search.
+    // -----------------------------------------------------------------
+
+    function initSearch() {
+        var form = doc.querySelector('.topbar__search');
+        if (!form) { return; }
+
+        var input = form.querySelector('input[type="search"]');
+        var clear = form.querySelector('[data-search-clear]');
+        var hint = form.querySelector('.searchkbd');
+        if (!input) { return; }
+
+        function sync() {
+            form.classList.toggle('has-value', input.value !== '');
+        }
+
+        function clearInput() {
+            input.value = '';
+            sync();
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.focus();
+        }
+
+        input.addEventListener('input', sync);
+        sync();
+
+        if (clear) {
+            clear.addEventListener('click', clearInput);
+        }
+
+        if (hint && /Mac|iPhone|iPad|iPod/.test(navigator.platform || '')) {
+            hint.textContent = '⌘K';
+        }
+
+        doc.addEventListener('keydown', function (event) {
+            var target = event.target;
+            var tag = target && target.tagName ? target.tagName.toLowerCase() : '';
+            var typing = tag === 'input' || tag === 'textarea' || tag === 'select' || (target && target.isContentEditable);
+
+            if ((event.key === '/' && !typing) || ((event.metaKey || event.ctrlKey) && String(event.key).toLowerCase() === 'k')) {
+                event.preventDefault();
+                input.focus();
+                input.select();
+                return;
+            }
+
+            if (event.key === 'Escape' && doc.activeElement === input) {
+                if (input.value !== '') {
+                    event.preventDefault();
+                    clearInput();
+                } else {
+                    input.blur();
+                }
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------
     // Flash messages
     // -----------------------------------------------------------------
 
@@ -396,6 +458,7 @@
     onReady(function () {
         initSidebar();
         initTheme();
+        initSearch();
         initFlashes();
         initConfirms();
         initPasswordReveal();

@@ -64,7 +64,7 @@ function render_document_head(string $title, array $options = []): void
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-        <link rel="stylesheet" href="<?= e(url('assets/css/style.css?v=20261102-monochrome-6')) ?>">
+        <link rel="stylesheet" href="<?= e(url('assets/css/style.css?v=20261103-layout-1')) ?>">
         <?php foreach ((array) ($options['styles'] ?? []) as $style): ?>
             <link rel="stylesheet" href="<?= e(url((string) $style)) ?>">
         <?php endforeach; ?>
@@ -108,7 +108,7 @@ function render_standalone_head(string $title, array $options = []): void
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-        <link rel="stylesheet" href="<?= e(url('assets/css/style.css?v=20261102-monochrome-6')) ?>">
+        <link rel="stylesheet" href="<?= e(url('assets/css/style.css?v=20261103-layout-1')) ?>">
         <?php if (!empty($options['meta'])): ?>
             <meta name="description" content="<?= e((string) $options['meta']) ?>">
         <?php endif; ?>
@@ -128,7 +128,7 @@ function render_document_foot(array $options = []): void
     // app.js always loads; anything extra follows it.
     $scripts = $options['scripts'] ?? [];
     ?>
-    <script src="<?= e(url('assets/js/app.js?v=20261102-sidebar-v2')) ?>" defer></script>
+    <script src="<?= e(url('assets/js/app.js?v=20261103-search-1')) ?>" defer></script>
     <?php foreach ($scripts as $script): ?>
         <script src="<?= e(url((string) $script)) ?>" defer></script>
     <?php endforeach; ?>

@@ -61,10 +61,14 @@ function render_topbar(string $active = ''): void
         </div>
 
         <form class="topbar__search" method="get" action="<?= e(url('search.php')) ?>" role="search">
-            <?= icon('search', 15) ?>
+            <?= icon('search', 16) ?>
             <input type="search" name="q" value="<?= e(query_string('q')) ?>"
                    placeholder="Search anything…" aria-label="Search students, staff, courses and notices"
-                   autocomplete="off">
+                   autocomplete="off" spellcheck="false" enterkeyhint="search">
+            <button class="searchclear" type="button" data-search-clear aria-label="Clear search" title="Clear search">
+                <?= icon('x', 13) ?>
+            </button>
+            <kbd class="searchkbd" aria-hidden="true">Ctrl K</kbd>
         </form>
 
         <div class="topbar__actions">
