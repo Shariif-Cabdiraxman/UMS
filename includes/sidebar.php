@@ -117,7 +117,6 @@ function navigation_counts(): array
 function render_sidebar(string $active = ''): void
 {
     $counts = navigation_counts();
-    $user   = current_user();
     ?>
     <div class="shell">
         <aside class="sidebar" id="sidebar">
@@ -166,31 +165,7 @@ function render_sidebar(string $active = ''): void
                 <?php endforeach; ?>
             </nav>
 
-            <div class="sidebar__promo">
-                <div class="promocard">
-                    <div class="promocard__icon"><?= icon('credit-card', 20) ?></div>
-                    <div class="promocard__content">
-                        <p class="promocard__title">Campus Manager</p>
-                        <p class="promocard__sub">Verified academic ledger</p>
-                        <a class="promocard__link" href="<?= e(url('students/index.php')) ?>">
-                            <span>Open Records</span>
-                            <?= icon('arrow-right', 13) ?>
-                        </a>
-                    </div>
-                </div>
-            </div>
-
             <div class="sidebar__foot">
-                <div class="signedin">
-                    <?= render_avatar(
-                        (string) ($user['full_name'] ?? ''),
-                        ''
-                    ) ?>
-                    <div class="signedin__text">
-                        <p class="signedin__name"><?= e($user['full_name'] ?? '') ?></p>
-                        <p class="signedin__role"><?= e(humanize($user['role'] ?? '')) ?></p>
-                    </div>
-                </div>
                 <a class="sidebar__logout" href="<?= e(url('auth/logout.php')) ?>" aria-label="Sign out" data-tooltip="Sign out" title="Sign out">
                     <?= icon('logout', 15) ?><span>Sign out</span>
                 </a>

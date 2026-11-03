@@ -22,7 +22,7 @@
 
 // Bumped whenever a static asset changes, so the old cache is dropped on the
 // next activation rather than lingering.
-var CACHE = 'ums-static-v1';
+var CACHE = 'ums-static-v4';
 
 var PRECACHE = [
     'assets/css/style.css',
