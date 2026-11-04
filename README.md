@@ -6,7 +6,7 @@
 [![Tests](https://img.shields.io/badge/Tests-218%20passing-brightgreen)](tools/)
 [![Architecture](https://img.shields.io/badge/Architecture-Modular%20MVC-blueviolet)](#architecture)
 [![Mobile](https://img.shields.io/badge/Mobile-Responsive%20%2B%20PWA-orange)](#on-a-phone)
-[![Security](https://img.shields.io/badge/Security-Hardened-red)](#security)
+[![Security](https://img.shields.io/badge/Security-Hardened%20baseline-red)](#security)
 
 ---
 
@@ -22,8 +22,8 @@ It covers the academic structure of the institution (faculties, departments, sta
 
 ```bash
 # 1. Clone
-git clone https://github.com/Shariif-Cabdiraxman/UMS.git
-cd UMS
+git clone https://github.com/Shariif-Cabdiraxman/Campus-Manager.git
+cd Campus-Manager
 
 # 2. Import schema + seed data
 mysql -u root < database.sql
@@ -31,17 +31,16 @@ mysql -u root < database.sql
 # 3. Configure (copy template, edit credentials)
 cp config/database.example.php config/database.php
 
-# 4. Open in browser
-# http://localhost/UMS/
+# 4. Set the first administrator password (no usable password is seeded)
+php tools/set_password.php admin 'choose-a-strong-password'
+
+# 5. Open in browser
+# http://localhost/Campus-Manager/
 ```
 
-**Demo accounts** (printed on the login page when `APP_DEMO_MODE=1`):
-
-| Username | Password | Role | Access |
-|----------|----------|------|--------|
-| `admin` | `Admin@123` | admin | All modules |
-| `registrar` | `Registrar@123` | registrar | Students, courses, enrolments, grades, announcements |
-| `admissions` | `Registrar@123` | registrar | Same as registrar |
+For a local demonstration only, run `php tools/set_password.php --demo` after
+the import, then enable demo mode as described below. The demo passwords are
+public and must never be used on a real installation.
 
 ---
 
@@ -106,7 +105,7 @@ cp config/database.example.php config/database.php
 |-----------|---------|
 | **PHP** | 8.0+ with `mysqli` extension |
 | **Database** | MySQL 8.x or MariaDB 10.4+ |
-| **Web Server** | Apache (mod_rewrite not required), Nginx, or any PHP-capable server |
+| **Web Server** | Apache with `mod_rewrite` enabled (for the included access rules), Nginx, or any PHP-capable server |
 
 Developed and tested on **XAMPP** (PHP 8.0.30, MariaDB, Apache on port 80).
 
@@ -116,10 +115,10 @@ Developed and tested on **XAMPP** (PHP 8.0.30, MariaDB, Apache on port 80).
 
 ### 1. Get the Files
 ```bash
-git clone https://github.com/Shariif-Cabdiraxman/UMS.git
+git clone https://github.com/Shariif-Cabdiraxman/Campus-Manager.git
 ```
 
-Place under your web root (e.g., `htdocs/UMS` or `/var/www/html/UMS`).
+Place under your web root (e.g., `htdocs/Campus-Manager` or `/var/www/html/Campus-Manager`).
 
 ### 2. Create Database & Import Schema
 ```bash
@@ -145,8 +144,19 @@ define('DB_USER', getenv('DB_USER') ?: 'root');
 define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : '');
 ```
 
-### 4. Open in Browser
-Navigate to `http://localhost/UMS/` and sign in with a demo account.
+### 4. Set the First Password
+`database.sql` ships no usable password. Set one for the first administrator:
+
+```bash
+php tools/set_password.php admin 'choose-a-strong-password'
+```
+
+For a local demonstration only, `php tools/set_password.php --demo` restores the
+public demo passwords.
+
+### 5. Open in Browser
+Navigate to `http://localhost/Campus-Manager/` and sign in with the
+administrator password you set in step 4.
 
 ---
 
@@ -162,14 +172,20 @@ A fresh import contains enough data to exercise every screen, including the dele
 
 ## Demo Accounts & Roles
 
-### Accounts (seeded by `database.sql`)
-> ⚠️ Change passwords or drop users before any real deployment!
+### Accounts
+`database.sql` creates the three staff rows but ships **no usable password**.
+Set one from the command line:
 
-| Username | Password | Role | Sees |
-|----------|----------|------|------|
-| `admin` | `Admin@123` | admin | Every module |
-| `registrar` | `Registrar@123` | registrar | Students, courses, enrolments, grades, announcements |
-| `admissions` | `Registrar@123` | registrar | Same as registrar |
+```bash
+# Real installation: choose a strong password for the first administrator
+php tools/set_password.php admin 'choose-a-strong-password'
+
+# Local demonstration only: restore the public demo passwords
+php tools/set_password.php --demo
+```
+
+Then enable demo mode if you want the sign-in page to list the demo accounts.
+Never run `--demo` against a real deployment.
 
 ### Permission Matrix
 
@@ -188,15 +204,23 @@ A fresh import contains enough data to exercise every screen, including the dele
 Permissions are checked server-side in `require_permission()` at the top of every write endpoint — editing the URL or posting directly cannot bypass the interface.
 
 ### Debug / Demo Mode
+Demo mode is **off by default**, so the sign-in page never advertises working
+credentials on a fresh install. Enable it only for a local portfolio copy:
+
 ```powershell
-# Disable demo hint block on login page
+# Show the demo hint block on the login page
+setx APP_DEMO_MODE 1    # restart Apache
+
+# Hide it again (an explicit off value always wins)
 setx APP_DEMO_MODE 0    # restart Apache
 
 # Enable debug exceptions (local only!)
 setx APP_DEBUG 1        # restart Apache
 ```
+
 Or create empty files (gitignored):
-- `config/demo.off.local.php` — disables demo mode
+- `config/demo.local.php` — enables demo mode
+- `config/demo.off.local.php` — disables demo mode even if the environment enables it
 - `config/debug.local.php` — enables debug mode
 
 ---
@@ -213,7 +237,7 @@ Or create empty files (gitignored):
 | **Enrollments** | Student ↔ Course in term/year | Rejected if course dept ≠ student dept |
 | **Grades** | Marks per assessment | Letter grade computed server-side from mark (never typed) |
 | **Announcements** | Notices (draft/published) | `published_at` stamped on first publish |
-| **Users** | Sign-in accounts | bcrypt passwords; 5 failures → 15-min cool-down |
+| **Users** | Sign-in accounts | bcrypt passwords; 5 failures per session → 15-min cool-down |
 
 > Example: a grade of `87.5` is recorded as `B`. The letter is always derived from the mark, so a stored letter can never disagree with its mark.
 
@@ -249,6 +273,10 @@ The **same application, drawn for a thumb**. No second set of screens, no second
 
 ## Tests
 
+The smoke suites sign in as the demo administrator, so run
+`php tools/set_password.php --demo` on the local test database first. Never run
+that command against a real deployment.
+
 ### Desktop Smoke Suite (86 checks)
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_modules.ps1
@@ -269,8 +297,9 @@ Both suites create and remove their own rows — a green run leaves the database
 
 ### Manual Probe
 ```powershell
+$env:SMOKE_PASSWORD = 'your-password'   # or run tools\set_password.php --demo first
 . tools\smoke.ps1
-Login 'admin' 'Admin@123'
+Login 'admin' $env:SMOKE_PASSWORD
 $r = Http-Get '/grades/index.php'
 $r.Status                      # 200
 Diagnostics $r.Html            # $null = no PHP diagnostics leaked
@@ -286,7 +315,7 @@ find . -name '*.php' -exec php -l {} \;
 ## Project Structure
 
 ```
-UMS/
+Campus-Manager/
 ├── index.php                 # Front controller → redirects to sign-in
 ├── auth/                     # login.php, logout.php
 ├── dashboard.php             # Landing page with deep links per module
@@ -312,21 +341,25 @@ UMS/
 ├── m/                        # Phone module index (desktop sent onward)
 ├── faculties/  departments/  lecturers/  courses/
 ├── students/   enrollments/  grades/  announcements/  users/
-└── tools/                    # smoke.ps1, smoke_modules.ps1, smoke_mobile.ps1
+├── .htaccess                 # Denies .git, config, includes, tools, SQL and docs
+└── tools/                    # set_password.php, seed_students.php, smoke suites
 ```
 
 ---
 
 ## Security
 
-- **Passwords**: bcrypt via `password_hash()`; column never read back
+- **Passwords**: bcrypt via `password_hash()`; the seed file ships no usable password
+- **Demo Mode**: off by default; the login page advertises accounts only when explicitly enabled
 - **Authorization**: every write behind `require_permission()`, server-side
 - **XSS Prevention**: all output through `e()`; `safe_identifier()` guards SQL interpolation
 - **SQL Injection**: every statement prepared + parameter-bound
 - **CSRF**: state-changing forms carry a token
 - **CSP**: `Content-Security-Policy` set — no inline handlers (filters use `data-auto-submit`)
-- **Brute-Force Protection**: 5 failed logins → 15-minute cool-down
+- **Brute-Force Protection**: 5 failed logins per session → 15-minute cool-down (server-side throttling is the next hardening step)
 - **Timing Attack Resistance**: unknown usernames still run `password_verify()` against dummy hash
+- **Web Exposure**: `.htaccess` denies `.git`, `config/`, `includes/`, `tools/`, SQL dumps, Markdown notes, and dotfiles; directory listings are off
+- **CLI Tools**: `seed_students.php` and `set_password.php` refuse to run outside the command line
 
 ---
 
@@ -335,8 +368,8 @@ UMS/
 1. Fork the repo
 2. Create a feature branch (`git checkout -b feature/amazing-thing`)
 3. Run syntax check: `find . -name '*.php' -exec php -l {} \;`
-3. Run smoke tests: `powershell -File tools\smoke_modules.ps1`
-4. Submit a PR with a clear description
+4. Run smoke tests: `powershell -File tools\smoke_modules.ps1`
+5. Submit a PR with a clear description
 
 ---
 

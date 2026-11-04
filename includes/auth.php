@@ -45,6 +45,8 @@ const ROLE_PERMISSIONS = [
         'grades.manage',
         'announcements.manage',
     ],
+    // Students use their own portal pages and never hold staff write access.
+    'student' => [],
 ];
 
 /** How many failed sign-in attempts are tolerated before a short cool-down. */
@@ -88,6 +90,8 @@ function login_user(array $user): void
 {
     session_regenerate_id(true);
 
+    $isStudent = ($user['role'] ?? '') === 'student';
+
     $_SESSION['user_id']       = (int) $user['id'];
     $_SESSION['username']      = $user['username'];
     $_SESSION['full_name']     = $user['full_name'];
@@ -97,11 +101,23 @@ function login_user(array $user): void
     $_SESSION['last_activity'] = time();
     unset($_SESSION['login_failures'], $_SESSION['login_locked_until']);
 
-    db_execute(
-        'UPDATE `users` SET `last_login_at` = NOW() WHERE `id` = ?',
-        'i',
-        [(int) $user['id']]
-    );
+    if ($isStudent) {
+        $_SESSION['student_id'] = (int) ($user['student_id'] ?? 0);
+
+        db_execute(
+            'UPDATE `student_accounts` SET `last_login_at` = NOW() WHERE `id` = ?',
+            'i',
+            [(int) $user['id']]
+        );
+    } else {
+        unset($_SESSION['student_id']);
+
+        db_execute(
+            'UPDATE `users` SET `last_login_at` = NOW() WHERE `id` = ?',
+            'i',
+            [(int) $user['id']]
+        );
+    }
 }
 
 /** The signed-in user as stored in the session, or null. */
@@ -117,6 +133,7 @@ function current_user(): ?array
         'full_name'  => $_SESSION['full_name'] ?? '',
         'email'      => $_SESSION['email'] ?? '',
         'role'       => $_SESSION['role'] ?? 'registrar',
+        'student_id' => isset($_SESSION['student_id']) ? (int) $_SESSION['student_id'] : null,
     ];
 }
 
@@ -140,6 +157,22 @@ function require_login(): void
     }
 
     enforce_session_timeout();
+
+    // A student session must never reach the staff modules. The portal pages
+    // call require_student() on top of this; this guard closes the other
+    // direction for every page that already calls require_login().
+    $user = current_user();
+    if (($user['role'] ?? '') === 'student' && !is_student_area()) {
+        redirect('portal/dashboard.php');
+    }
+}
+
+/** Is the current request inside the student portal directory? */
+function is_student_area(): bool
+{
+    $prefix = rtrim(BASE_URL, '/') . '/portal/';
+
+    return strpos(current_script_path(), $prefix) === 0;
 }
 
 /** Abandon a session that has been idle too long or has simply run too long. */
@@ -252,8 +285,9 @@ function attempt_login(string $identifier, string $password): array
 
     $identifier = trim($identifier);
 
-    // One statement, two possible columns to match on. The value is bound,
-    // never concatenated, so this cannot be used to probe the table.
+    // Staff accounts are checked first. A student account is only consulted
+    // when no staff account matched, so a staff email always resolves to the
+    // staff identity. The value stays bound in both statements.
     $user = db_row(
         'SELECT `id`, `username`, `email`, `password_hash`, `full_name`, `role`, `status`
            FROM `users`
@@ -263,9 +297,23 @@ function attempt_login(string $identifier, string $password): array
         [$identifier, $identifier]
     );
 
-    // password_verify is run even when no user matched, so that a wrong
-    // username and a wrong password take the same amount of time and the
-    // form cannot be used to discover which usernames exist.
+    if ($user === null) {
+        $user = db_row(
+            'SELECT sa.`id`, s.`student_no` AS `username`, s.`email`, sa.`password_hash`,
+                    CONCAT(s.`first_name`, \' \', s.`last_name`) AS `full_name`,
+                    \'student\' AS `role`, sa.`status`, s.`id` AS `student_id`
+               FROM `student_accounts` sa
+               JOIN `students` s ON s.`id` = sa.`student_id`
+              WHERE (s.`student_no` = ? OR s.`email` = ?)
+              LIMIT 1',
+            'ss',
+            [$identifier, $identifier]
+        );
+    }
+
+    // password_verify is run even when no account matched, so that a wrong
+    // identifier and a wrong password take the same amount of time and the
+    // form cannot be used to discover which accounts exist.
     $hash = $user['password_hash'] ?? '$2y$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidinv';
 
     if (!password_verify($password, $hash) || $user === null) {
@@ -288,8 +336,10 @@ function attempt_login(string $identifier, string $password): array
 
     // Transparently upgrade the stored hash if PHP's default algorithm moves on.
     if (password_needs_rehash($user['password_hash'], PASSWORD_DEFAULT)) {
+        $table = ($user['role'] ?? '') === 'student' ? 'student_accounts' : 'users';
+
         db_execute(
-            'UPDATE `users` SET `password_hash` = ? WHERE `id` = ?',
+            'UPDATE `' . $table . '` SET `password_hash` = ? WHERE `id` = ?',
             'si',
             [password_hash($password, PASSWORD_DEFAULT), (int) $user['id']]
         );

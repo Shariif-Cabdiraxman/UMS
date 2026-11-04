@@ -26,6 +26,7 @@ DROP TABLE IF EXISTS `grades`;
 DROP TABLE IF EXISTS `enrollments`;
 DROP TABLE IF EXISTS `announcements`;
 DROP TABLE IF EXISTS `courses`;
+DROP TABLE IF EXISTS `student_accounts`;
 DROP TABLE IF EXISTS `students`;
 DROP TABLE IF EXISTS `lecturers`;
 DROP TABLE IF EXISTS `departments`;
@@ -38,7 +39,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- 1. USERS
 --    Staff accounts that can sign in to the administration platform.
 --    Passwords are stored only as bcrypt hashes produced by
---    password_hash(); the plain text never appears anywhere in the app.
+--    password_hash(). The seed file ships no usable password.
 -- ---------------------------------------------------------------------
 CREATE TABLE `users` (
     `id`            INT UNSIGNED    NOT NULL AUTO_INCREMENT,
@@ -166,6 +167,30 @@ CREATE TABLE `students` (
     CONSTRAINT `fk_students_department`
         FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`)
         ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ---------------------------------------------------------------------
+-- 5b. STUDENT ACCOUNTS
+--     A student signs in with their student number or student email. The
+--     account is deliberately separate from the staff `users` table so a
+--     student can never inherit a staff role, and deleting a student removes
+--     the matching sign-in automatically.
+-- ---------------------------------------------------------------------
+CREATE TABLE `student_accounts` (
+    `id`            INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `student_id`    INT UNSIGNED NOT NULL,
+    `password_hash` VARCHAR(255) NOT NULL,
+    `status`        ENUM('active','inactive') NOT NULL DEFAULT 'active',
+    `last_login_at` DATETIME     NULL DEFAULT NULL,
+    `created_at`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_student_accounts_student` (`student_id`),
+    KEY `idx_student_accounts_status` (`status`),
+    CONSTRAINT `fk_student_accounts_student`
+        FOREIGN KEY (`student_id`) REFERENCES `students` (`id`)
+        ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -318,16 +343,24 @@ ALTER TABLE `departments`
 --     Enough realistic data that every list view, filter, search box and
 --     dashboard chart has something real to show on a first run.
 --
---     DEFAULT LOGIN ACCOUNTS
---       admin      / Admin@123       (full access)
---       registrar  / Registrar@123   (academic records only)
---     Change both passwords before using this anywhere real.
+--     SEEDED ACCOUNTS
+--
+--     No usable password is shipped in this file. After importing, set one
+--     from the command line:
+--
+--         php tools/set_password.php admin 'choose-a-strong-password'
+--
+--     For a local demonstration only, run:
+--
+--         php tools/set_password.php --demo
+--
+--     Then enable demo mode as described in README.md.
 -- ---------------------------------------------------------------------
 
 INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `full_name`, `role`, `status`, `last_login_at`) VALUES
-  (1, 'admin', 'admin@hagmah.edu', '$2y$10$9PPkieirCbcHebWY2j5dge/fMfne7dFMB8UUu5VmQHMkaT5xy/5cm', 'Abdirahman Warsame', 'admin', 'active', '2026-09-25 08:14:00'),
-  (2, 'registrar', 'registrar@hagmah.edu', '$2y$10$8bnblePgXQkMInd894RkEe6pFGsll9fsyI8KzsfGokrGH9mZ3hSmu', 'Fadumo Ismail', 'registrar', 'active', '2026-09-26 13:02:00'),
-  (3, 'admissions', 'admissions@hagmah.edu', '$2y$10$8bnblePgXQkMInd894RkEe6pFGsll9fsyI8KzsfGokrGH9mZ3hSmu', 'Hassan Abdi', 'registrar', 'active', '2026-09-24 16:41:00');
+  (1, 'admin', 'admin@hagmah.edu', '$2y$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidinv', 'Abdirahman Warsame', 'admin', 'active', '2026-09-25 08:14:00'),
+  (2, 'registrar', 'registrar@hagmah.edu', '$2y$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidinv', 'Fadumo Ismail', 'registrar', 'active', '2026-09-26 13:02:00'),
+  (3, 'admissions', 'admissions@hagmah.edu', '$2y$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidinv', 'Hassan Abdi', 'registrar', 'active', '2026-09-24 16:41:00');
 
 INSERT INTO `faculties` (`id`, `code`, `name`, `description`) VALUES
   (1, 'FCT-SCI', 'Faculty of Science and Technology', 'Pure and applied sciences, computing, and the mathematical sciences that underpin them.'),

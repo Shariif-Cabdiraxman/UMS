@@ -25,8 +25,10 @@ function current_section_label(string $active): string
 
 function render_topbar(string $active = ''): void
 {
-    $user    = current_user();
-    $section = current_section_label($active);
+    $user        = current_user();
+    $isStudent   = ($user['role'] ?? '') === 'student';
+    $home        = $isStudent ? 'portal/dashboard.php' : 'dashboard.php';
+    $section     = current_section_label($active);
     $isDashboard = $active === 'dashboard';
 
     // Keep the notification preview resilient if announcements are unavailable.
@@ -50,26 +52,28 @@ function render_topbar(string $active = ''): void
 
         <div class="topbar__heading">
             <?php if (!$isDashboard): ?>
-                <a class="topbar__back" href="<?= e(url('dashboard.php')) ?>" aria-label="Back to dashboard">
+                <a class="topbar__back" href="<?= e(url($home)) ?>" aria-label="Back to dashboard">
                     <?= icon('arrow-left', 18) ?>
                 </a>
             <?php endif; ?>
             <div class="topbar__breadcrumbs" aria-label="Breadcrumb">
                 <span class="topbar__section"><?= e($section) ?></span>
-                <span class="topbar__sub">Registrar workspace</span>
+                <span class="topbar__sub"><?= $isStudent ? 'Student portal' : 'Registrar workspace' ?></span>
             </div>
         </div>
 
-        <form class="topbar__search" method="get" action="<?= e(url('search.php')) ?>" role="search">
-            <?= icon('search', 16) ?>
-            <input type="search" name="q" value="<?= e(query_string('q')) ?>"
-                   placeholder="Search anything…" aria-label="Search students, staff, courses and notices"
-                   autocomplete="off" spellcheck="false" enterkeyhint="search">
-            <button class="searchclear" type="button" data-search-clear aria-label="Clear search" title="Clear search">
-                <?= icon('x', 13) ?>
-            </button>
-            <kbd class="searchkbd" aria-hidden="true">Ctrl K</kbd>
-        </form>
+        <?php if (!$isStudent): ?>
+            <form class="topbar__search" method="get" action="<?= e(url('search.php')) ?>" role="search">
+                <?= icon('search', 16) ?>
+                <input type="search" name="q" value="<?= e(query_string('q')) ?>"
+                       placeholder="Search anything…" aria-label="Search students, staff, courses and notices"
+                       autocomplete="off" spellcheck="false" enterkeyhint="search">
+                <button class="searchclear" type="button" data-search-clear aria-label="Clear search" title="Clear search">
+                    <?= icon('x', 13) ?>
+                </button>
+                <kbd class="searchkbd" aria-hidden="true">Ctrl K</kbd>
+            </form>
+        <?php endif; ?>
 
         <div class="topbar__actions">
             <details class="notifmenu">
@@ -80,13 +84,13 @@ function render_topbar(string $active = ''): void
                 <div class="notifmenu__panel">
                     <div class="notifmenu__head">
                         <p class="notifmenu__title">Notice board</p>
-                        <a class="notifmenu__link" href="<?= e(url('announcements/index.php')) ?>">View all</a>
+                        <a class="notifmenu__link" href="<?= e(url($isStudent ? 'portal/announcements.php' : 'announcements/index.php')) ?>">View all</a>
                     </div>
                     <?php if ($notices === []): ?>
                         <p class="notifmenu__meta" style="padding:14px 10px">No published notices yet.</p>
                     <?php else: ?>
                         <?php foreach ($notices as $notice): ?>
-                            <a class="notifmenu__item" href="<?= e(url('announcements/view.php?id=' . (int) $notice['id'])) ?>">
+                            <a class="notifmenu__item" href="<?= e(url($isStudent ? 'portal/announcement.php?id=' . (int) $notice['id'] : 'announcements/view.php?id=' . (int) $notice['id'])) ?>">
                                 <span class="notifmenu__icon"><?= icon('announcement', 14) ?></span>
                                 <span class="notifmenu__text">
                                     <span class="notifmenu__name"><?= e($notice['title']) ?></span>
@@ -125,22 +129,34 @@ function render_topbar(string $active = ''): void
                         <div class="usermenu__badge"><?= badge(humanize($user['role'] ?? '')) ?></div>
                     </div>
                     <div class="usermenu__menu">
-                        <a class="usermenu__item" href="<?= e(url('dashboard.php')) ?>">
+                        <a class="usermenu__item" href="<?= e(url($home)) ?>">
                             <?= icon('dashboard', 15) ?><span>Dashboard</span>
                         </a>
-                        <a class="usermenu__item" href="<?= e(url('account.php')) ?>">
-                            <?= icon('settings', 15) ?><span>Account settings</span>
-                        </a>
-                        <a class="usermenu__item" href="<?= e(url('students/index.php')) ?>">
-                            <?= icon('student', 15) ?><span>Student Records</span>
-                        </a>
-                        <a class="usermenu__item" href="<?= e(url('courses/index.php')) ?>">
-                            <?= icon('course', 15) ?><span>Course Catalog</span>
-                        </a>
-                        <?php if (can('users.manage')): ?>
-                            <a class="usermenu__item" href="<?= e(url('users/index.php')) ?>">
-                                <?= icon('shield', 15) ?><span>User Accounts</span>
+                        <?php if ($isStudent): ?>
+                            <a class="usermenu__item" href="<?= e(url('portal/profile.php')) ?>">
+                                <?= icon('student', 15) ?><span>My profile</span>
                             </a>
+                            <a class="usermenu__item" href="<?= e(url('portal/courses.php')) ?>">
+                                <?= icon('course', 15) ?><span>My courses</span>
+                            </a>
+                            <a class="usermenu__item" href="<?= e(url('portal/account.php')) ?>">
+                                <?= icon('settings', 15) ?><span>Account settings</span>
+                            </a>
+                        <?php else: ?>
+                            <a class="usermenu__item" href="<?= e(url('account.php')) ?>">
+                                <?= icon('settings', 15) ?><span>Account settings</span>
+                            </a>
+                            <a class="usermenu__item" href="<?= e(url('students/index.php')) ?>">
+                                <?= icon('student', 15) ?><span>Student Records</span>
+                            </a>
+                            <a class="usermenu__item" href="<?= e(url('courses/index.php')) ?>">
+                                <?= icon('course', 15) ?><span>Course Catalog</span>
+                            </a>
+                            <?php if (can('users.manage')): ?>
+                                <a class="usermenu__item" href="<?= e(url('users/index.php')) ?>">
+                                    <?= icon('shield', 15) ?><span>User Accounts</span>
+                                </a>
+                            <?php endif; ?>
                         <?php endif; ?>
                         <div class="usermenu__divider"></div>
                         <a class="usermenu__item usermenu__item--danger" href="<?= e(url('auth/logout.php')) ?>">

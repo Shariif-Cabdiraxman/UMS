@@ -43,7 +43,8 @@ date_default_timezone_set('Indian/Maldives');
 //     setx APP_DEBUG 1            (PowerShell, then restart Apache)
 //     $env:APP_DEBUG = '1'        (current shell only)
 // ---------------------------------------------------------------------
-$debugSetting = strtolower((string) (getenv('APP_DEBUG') ?: ''));
+$debugRaw     = getenv('APP_DEBUG');
+$debugSetting = $debugRaw === false ? '' : strtolower(trim((string) $debugRaw));
 $debugEnabled = in_array($debugSetting, ['1', 'true', 'yes', 'on'], true)
     || is_file(APP_ROOT . '/config/debug.local.php');
 
@@ -52,25 +53,28 @@ define('APP_DEBUG', $debugEnabled);
 // ---------------------------------------------------------------------
 // Demonstration mode.
 //
-// While this is on, the sign-in screen lists the seeded accounts so the
-// project can be opened and used straight away. It is on by default because
-// this repository is a portfolio project rather than a live system, and the
-// seeded data is fictitious either way.
+// Off by default, so a fresh install never advertises working credentials.
+// Turn it on only for a portfolio or training copy. Either create the file:
 //
-// Turn it off for any real installation, so the sign-in page stops
-// advertising working credentials. Create an empty file:
-//
-//     config/demo.off.local.php
+//     config/demo.local.php
 //
 // or set an environment variable:
 //
-//     setx APP_DEMO_MODE 0        (PowerShell, then restart Apache)
-//     $env:APP_DEMO_MODE = '0'    (current shell only)
+//     setx APP_DEMO_MODE 1        (PowerShell, then restart Apache)
+//     $env:APP_DEMO_MODE = '1'    (current shell only)
+//
+// An explicit off value always wins, so `APP_DEMO_MODE=0` reliably disables
+// the panel even if the environment is overridden elsewhere.
 // ---------------------------------------------------------------------
-$demoSetting = strtolower((string) (getenv('APP_DEMO_MODE') ?: ''));
-$demoDisabled = in_array($demoSetting, ['0', 'false', 'no', 'off'], true)
-    || is_file(APP_ROOT . '/config/demo.off.local.php');
-$demoEnabled = !$demoDisabled;
+$demoRaw     = getenv('APP_DEMO_MODE');
+$demoSetting = $demoRaw === false ? '' : strtolower(trim((string) $demoRaw));
+$demoEnabled = in_array($demoSetting, ['1', 'true', 'yes', 'on'], true)
+    || is_file(APP_ROOT . '/config/demo.local.php');
+
+if (in_array($demoSetting, ['0', 'false', 'no', 'off'], true)
+    || is_file(APP_ROOT . '/config/demo.off.local.php')) {
+    $demoEnabled = false;
+}
 
 define('APP_DEMO_MODE', $demoEnabled);
 

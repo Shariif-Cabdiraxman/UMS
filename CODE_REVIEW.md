@@ -1,25 +1,36 @@
-# UMS (University Management System) — Code Review & Issues
+# Campus Manager — Code Review & Issues
 
-*Generated from automated review of commit `651476e`*
+*Originally generated from commit `651476e`; status notes added after the
+security hardening pass.*
+
+> **Status:** The demo-credential and default-demo-mode findings (item 2) and
+> the web-root exposure of `.git`, `database.sql`, `config/`, `includes/`, and
+> `tools/` are now fixed. Item 1 (session-only login throttling) remains open;
+> item 3 (HSTS/COOP/CORP) is deferred. Items 5 and 6 were reviewed and are not
+> vulnerabilities as written.
 
 ---
 
 ## 🔴 Critical Security Issues
 
-### 1. **No Server-Side Rate Limiting on Login** (`includes/auth.php:237-313`)
-**Severity:** Critical
+### 1. **No Server-Side Rate Limiting on Login** — OPEN (`includes/auth.php:237-313`)
+**Severity:** High (deferred)
 - Login brute-force protection only uses session-based tracking (`$_SESSION['login_failures']`)
 - Attacker can clear cookies or use incognito to bypass
 - **Fix:** Implement IP-based rate limiting with Redis/memory store, or at minimum log failed attempts to DB with IP
 
-### 2. **Demo Credentials in Production Database** (`database.sql:327-330`)
-**Severity:** Critical
-- Seeded accounts (`admin`/`Admin@123`, `registrar`/`Registrar@123`) have known passwords
-- `APP_DEMO_MODE` defaults to `true` — exposes credentials on login page
-- **Fix:** Remove demo accounts from production seed; require explicit opt-in; generate random passwords on install
+### 2. **Demo Credentials in Production Database** — FIXED
+**Original severity:** Critical
+- `database.sql` now seeds unusable password hashes; the first password is set
+  with `php tools/set_password.php <username> <password>`.
+- `APP_DEMO_MODE` now defaults to `false`; the login page shows demo accounts
+  only when demo mode is explicitly enabled.
+- The `"0"`/`"false"` environment values now reliably disable demo mode.
+- Demo passwords are restored only by the explicit
+  `php tools/set_password.php --demo` command.
 
-### 3. **Missing HTTP Security Headers in Production** (`includes/init.php:32-48`)
-**Severity:** High
+### 3. **Missing HTTP Security Headers in Production** — DEFERRED (`includes/init.php:32-48`)
+**Severity:** Medium (HTTPS/HSTS only matters on a public deployment)
 - CSP allows `'unsafe-inline'` for styles (needed for chart bars)
 - No `Strict-Transport-Security` (HSTS) header
 - No `Cross-Origin-Opener-Policy` or `Cross-Origin-Resource-Policy`
@@ -35,17 +46,20 @@
 - Smoke tests are PowerShell-based and won't run on Ubuntu runners
 - **Fix:** Port smoke tests to bash/Node.js; use `act` for local testing; add `composer` if dependencies grow
 
-### 5. **Session Fixation Risk on Login** (`includes/auth.php:87-105`)
-**Severity:** High
-- `session_regenerate_id(true)` called — good
-- But old session data not explicitly destroyed before regeneration
-- **Fix:** Call `session_destroy()` before `session_regenerate_id()` for defense in depth
+### 5. **Session Fixation Risk on Login** — NOT A VULNERABILITY
+**Original severity:** High
+- `session_regenerate_id(true)` is called on login and deletes the old session
+  file; the `true` argument is the protection.
+- Calling `session_destroy()` first would remove the current data and is not
+  required here.
+- **Action:** No change.
 
-### 6. **SQL Identifier Sanitization Incomplete** (`includes/validation.php:227-236`)
-**Severity:** High
-- `safe_identifier()` only allows `[A-Za-z_]` — breaks backticks, dots, or qualified names
-- Used in `table_count()` and `unique:`/`exists:` rules
-- **Fix:** Allow `.` for `db.table` syntax; validate against actual schema
+### 6. **SQL Identifier Sanitization Incomplete** — ACCEPTED DESIGN
+**Original severity:** High
+- Table and column names in `unique:`/`exists:` rules are written in code, not
+  taken from a request, and `safe_identifier()` is a second line of defence.
+- The app never needs `db.table` syntax, so rejecting `.` is intentional.
+- **Action:** No change.
 
 ### 7. **No Audit Logging for Data Changes** (All CRUD operations)
 **Severity:** High

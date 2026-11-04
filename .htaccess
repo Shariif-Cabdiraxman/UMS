@@ -1,0 +1,19 @@
+# Keep source, metadata, and maintenance scripts out of the web root.
+# The application itself lives in the same directory, so only the runtime
+# assets and PHP pages are reachable from a browser.
+
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Version control, configuration, server-side libraries, and CLI tools.
+    RewriteRule ^(?:\.git|config|includes|tools)(?:/|$) - [F,L]
+
+    # Dotfiles and dot-directories, except ACME/well-known endpoints.
+    RewriteRule (^|/)\.(?!well-known/) - [F,L]
+</IfModule>
+
+<FilesMatch "(?i)\.(sql|md|ps1|log|ini|env|bak|old|orig|dist)$">
+    Require all denied
+</FilesMatch>

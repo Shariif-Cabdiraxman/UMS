@@ -127,8 +127,9 @@ function checked(bool $condition): string
  * The seeded accounts the sign-in screen may advertise.
  *
  * Empty unless the deployment is in demonstration mode, so a real install
- * never shows a working password on the sign-in page. The passwords mirror
- * the ones in database.sql; changing them there means changing them here.
+ * never shows a working password on the sign-in page. Run
+ * `php tools/set_password.php --demo` once after importing database.sql to
+ * give these accounts their demo passwords.
  *
  * @return array<int,array{role:string,username:string,password:string}>
  */
@@ -497,6 +498,10 @@ function role_badge(?string $role): string
 
     if ($role === 'registrar') {
         return badge('registrar', 'Registrar');
+    }
+
+    if ($role === 'student') {
+        return badge('student', 'Student');
     }
 
     return badge($role);

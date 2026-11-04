@@ -21,6 +21,32 @@ declare(strict_types=1);
  */
 function navigation_groups(): array
 {
+    if ((current_user()['role'] ?? '') === 'student') {
+        return [
+            [
+                'label' => 'My portal',
+                'items' => [
+                    ['key' => 'dashboard',    'label' => 'Dashboard', 'icon' => 'dashboard',    'href' => 'portal/dashboard.php'],
+                    ['key' => 'profile',      'label' => 'My profile', 'icon' => 'student',     'href' => 'portal/profile.php'],
+                    ['key' => 'courses',      'label' => 'My courses', 'icon' => 'course',      'href' => 'portal/courses.php'],
+                    ['key' => 'grades',       'label' => 'My grades',  'icon' => 'grades',      'href' => 'portal/grades.php'],
+                ],
+            ],
+            [
+                'label' => 'Communication',
+                'items' => [
+                    ['key' => 'announcements', 'label' => 'Notices', 'icon' => 'announcement', 'href' => 'portal/announcements.php'],
+                ],
+            ],
+            [
+                'label' => 'Account',
+                'items' => [
+                    ['key' => 'account', 'label' => 'Settings', 'icon' => 'settings', 'href' => 'portal/account.php'],
+                ],
+            ],
+        ];
+    }
+
     $groups = [
         [
             'label' => 'Overview',
@@ -116,12 +142,13 @@ function navigation_counts(): array
  */
 function render_sidebar(string $active = ''): void
 {
-    $counts = navigation_counts();
+    $isStudent = (current_user()['role'] ?? '') === 'student';
+    $counts    = $isStudent ? [] : navigation_counts();
     ?>
     <div class="shell">
         <aside class="sidebar" id="sidebar">
             <div class="sidebar__brand">
-                <a class="brand" href="<?= e(url('dashboard.php')) ?>">
+                <a class="brand" href="<?= e(url(($isStudent ?? false) ? 'portal/dashboard.php' : 'dashboard.php')) ?>">
                     <span class="brand__mark"><?= brand_mark(30) ?></span>
                     <span class="brand__text">
                         <span class="brand__name"><?= e(APP_SHORT) ?></span>

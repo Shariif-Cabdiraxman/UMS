@@ -134,6 +134,15 @@ function is_mobile_device(): bool
  */
 function mobile_sections(): array
 {
+    if ((current_user()['role'] ?? '') === 'student') {
+        return [
+            ['key' => 'dashboard', 'label' => 'Home',    'icon' => 'dashboard', 'href' => 'portal/dashboard.php'],
+            ['key' => 'courses',   'label' => 'Courses', 'icon' => 'course',    'href' => 'portal/courses.php'],
+            ['key' => 'grades',    'label' => 'Grades',  'icon' => 'grades',    'href' => 'portal/grades.php'],
+            ['key' => 'more',      'label' => 'More',    'icon' => 'grid',      'href' => 'portal/more.php'],
+        ];
+    }
+
     return [
         ['key' => 'dashboard', 'label' => 'Home',    'icon' => 'dashboard', 'href' => 'dashboard.php'],
         ['key' => 'students',  'label' => 'People',  'icon' => 'student',   'href' => 'students/index.php'],
@@ -150,6 +159,20 @@ function mobile_sections(): array
  */
 function mobile_active_section(string $key): string
 {
+    if ((current_user()['role'] ?? '') === 'student') {
+        $map = [
+            'dashboard'    => 'dashboard',
+            'courses'      => 'courses',
+            'grades'       => 'grades',
+            'more'         => 'more',
+            'profile'      => 'more',
+            'announcements' => 'more',
+            'account'      => 'more',
+        ];
+
+        return $map[$key] ?? '';
+    }
+
     $map = [
         'dashboard' => 'dashboard',
         'students'  => 'students',
@@ -220,7 +243,8 @@ function mobile_start(string $title, string $active = 'dashboard', array $option
         'head'      => $head,
     ]);
 
-    $eyebrow = (string) ($options['eyebrow'] ?? APP_TAGLINE);
+    $eyebrow = (string) ($options['eyebrow']
+        ?? ((current_user()['role'] ?? '') === 'student' ? 'Student portal' : APP_TAGLINE));
     ?>
     <header class="mbar">
         <span class="mbar__mark"><?= brand_mark(24) ?></span>

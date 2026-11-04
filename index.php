@@ -11,7 +11,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/init.php';
 
 if (is_logged_in()) {
-    redirect('dashboard.php');
+    redirect((current_user()['role'] ?? '') === 'student' ? 'portal/dashboard.php' : 'dashboard.php');
 }
 
 redirect('auth/login.php');

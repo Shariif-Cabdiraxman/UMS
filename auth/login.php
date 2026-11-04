@@ -9,7 +9,7 @@ require_once __DIR__ . '/../includes/init.php';
 require_once __DIR__ . '/../includes/layout.php';
 
 if (is_logged_in()) {
-    redirect('dashboard.php');
+    redirect((current_user()['role'] ?? '') === 'student' ? 'portal/dashboard.php' : 'dashboard.php');
 }
 
 $errors = [];
@@ -22,7 +22,7 @@ if (is_post()) {
     $password   = (string) input('password', '');
 
     if ($identifier === '') {
-        $errors['identifier'] = 'Enter your username or email address.';
+        $errors['identifier'] = 'Enter your username, email address or student number.';
     }
 
     if ($password === '') {
@@ -39,7 +39,7 @@ if (is_post()) {
             // Only follow a path inside this application.
             $destination = (is_string($intended) && strpos($intended, '..') === false && !preg_match('#^https?://#i', $intended))
                 ? $intended
-                : 'dashboard.php';
+                : (($result['user']['role'] ?? '') === 'student' ? 'portal/dashboard.php' : 'dashboard.php');
 
             flash_set('success', 'Welcome back, ' . $result['user']['full_name'] . '.');
             redirect($destination);
@@ -73,7 +73,7 @@ $demoAccounts = demo_accounts();
             <div class="auth__cardhead">
                 <p class="auth__eyebrow">Secure access</p>
                 <h1 class="auth__title" id="auth-title">Welcome back</h1>
-                <p class="auth__sub">Sign in with the account issued by the registrar&rsquo;s office.</p>
+                <p class="auth__sub">Staff sign in with their username or email. Students use their student number or student email.</p>
             </div>
 
             <?php if ($flashes !== []): ?>
@@ -91,7 +91,7 @@ $demoAccounts = demo_accounts();
                 <?= csrf_field() ?>
 
                 <div class="field<?= isset($errors['identifier']) ? ' is-invalid' : '' ?>">
-                    <label class="field__label" for="identifier">Username or email</label>
+                    <label class="field__label" for="identifier">Username, email or student number</label>
                     <div class="field__control">
                         <span class="field__leading"><?= icon('student', 17) ?></span>
                         <input
