@@ -1,4 +1,4 @@
-# Campus Manager
+# UNIVERSITY MANAGEMENT SYSTEM
 
 [![PHP Version](https://img.shields.io/badge/PHP-8.0%2B-777BB4?logo=php&logoColor=white)](https://php.net)
 [![Database](https://img.shields.io/badge/Database-MySQL%20%7C%20MariaDB-4479A1?logo=mysql&logoColor=white)](https://mariadb.org)
